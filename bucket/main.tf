@@ -1,8 +1,7 @@
 resource "aws_s3_bucket" "backend_bucket" {
-  bucket = "${var.project}-state"
-
+  bucket = "${var.project}-orders"
   tags = {
-    Name        = "${var.project}-state"
+    Name        = "${var.project}-orders"
     Environment = "Dev"
   }
 }

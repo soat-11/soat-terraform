@@ -1,13 +1,8 @@
 resource "aws_internet_gateway" "igw" {
-  vpc_id = aws_vpc.vpc_soat.id
+  vpc_id = var.vpc_id
 
   tags = {
-    Name = "igw-${aws_vpc.vpc_soat.id}"
+    Name = "igw-${var.vpc_id}"
   }
 
-}
-
-resource "aws_internet_gateway_attachment" "igw_attachment" {
-  vpc_id              = aws_vpc.vpc_soat.id
-  internet_gateway_id = aws_internet_gateway.igw.id
 }
