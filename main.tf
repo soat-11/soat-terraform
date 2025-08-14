@@ -36,3 +36,46 @@ module "route-table" {
   internet_gateway_id = module.internet_gateway.internet_gateway_id
   subnet_ids          = module.subnets.subnet_ids
 }
+
+module "eks_role" {
+  source = "./kubernets-service-role"
+
+  project_name = var.project
+}
+
+
+module "kubernets_service_role" {
+  source = "./kubernets-service-role"
+
+  project_name = var.project
+}
+
+module "eks_node_role" {
+  source = "./kubernets-node-role"
+
+
+  project = var.project
+}
+
+module "eks_node_group" {
+  source     = "./kubernets-node"
+  depends_on = [module.eks, module.eks_role]
+
+  cluster_name            = module.eks.cluster_name
+  project                 = var.project
+  eks_role_arn            = module.eks_role.eks_role_arn
+  subnet_ids              = module.subnets.subnet_ids
+  node_policy_attachments = module.eks_node_role.eks_node_policy_attachments
+}
+module "eks" {
+  source     = "./kubernets-service"
+  depends_on = [module.subnets, module.route-table]
+
+  vpc_id             = module.vpc.vpc_id
+  subnet_ids         = module.subnets.subnet_ids
+  project_name       = var.project
+  eks_role_arn       = module.eks_role.eks_role_arn
+  policy_attachments = module.eks_role.eks_policy_attachments
+}
+
+
