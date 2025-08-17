@@ -6,6 +6,11 @@ output "eks_node_role_name" {
 }
 
 output "eks_node_policy_attachments" {
+  depends_on = [
+    aws_iam_role_policy_attachment.example-AmazonEC2ContainerRegistryReadOnly,
+    aws_iam_role_policy_attachment.example-AmazonEKSWorkerNodePolicy,
+    aws_iam_role_policy_attachment.example-AmazonEKS_CNI_Policy,
+  ]
   value = [
     aws_iam_role_policy_attachment.example-AmazonEKSWorkerNodePolicy.id,
     aws_iam_role_policy_attachment.example-AmazonEKS_CNI_Policy.id,

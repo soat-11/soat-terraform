@@ -8,6 +8,5 @@ resource "aws_eks_cluster" "eks_cluster" {
     endpoint_private_access = false
   }
 
-  depends_on = [var.policy_attachments]
-
+  # depends_on = var.policy_attachments
 }

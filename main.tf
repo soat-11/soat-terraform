@@ -37,45 +37,49 @@ module "route-table" {
   subnet_ids          = module.subnets.subnet_ids
 }
 
-module "eks_role" {
-  source = "./kubernets-service-role"
+module "eks_service_role" {
+  source = "./k8s-service-role"
 
   project_name = var.project
 }
 
-
-module "kubernets_service_role" {
-  source = "./kubernets-service-role"
-
-  project_name = var.project
-}
 
 module "eks_node_role" {
-  source = "./kubernets-node-role"
+  source = "./k8s-node-role"
 
 
   project = var.project
 }
 
-module "eks_node_group" {
-  source     = "./kubernets-node"
-  depends_on = [module.eks, module.eks_role]
 
-  cluster_name            = module.eks.cluster_name
+
+
+module "eks_service" {
+  source = "./k8s-service"
+  depends_on = [
+    module.subnets, module.route-table,
+    module.eks_service_role.eks_policy_attachments
+  ]
+
+  vpc_id       = module.vpc.vpc_id
+  subnet_ids   = module.subnets.subnet_ids
+  project_name = var.project
+  eks_role_arn = module.eks_service_role.eks_role_arn
+}
+
+
+
+module "eks_node_group" {
+  source = "./k8s-node"
+  depends_on = [
+    module.eks_service,
+    module.eks_node_role
+  ]
+
+  cluster_name            = module.eks_service.cluster_name
   project                 = var.project
-  eks_role_arn            = module.eks_role.eks_role_arn
+  eks_role_arn            = module.eks_node_role.eks_node_role_arn
   subnet_ids              = module.subnets.subnet_ids
   node_policy_attachments = module.eks_node_role.eks_node_policy_attachments
 }
-module "eks" {
-  source     = "./kubernets-service"
-  depends_on = [module.subnets, module.route-table]
-
-  vpc_id             = module.vpc.vpc_id
-  subnet_ids         = module.subnets.subnet_ids
-  project_name       = var.project
-  eks_role_arn       = module.eks_role.eks_role_arn
-  policy_attachments = module.eks_role.eks_policy_attachments
-}
-
 
