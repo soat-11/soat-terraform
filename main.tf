@@ -83,3 +83,9 @@ module "eks_node_group" {
   node_policy_attachments = module.eks_node_role.eks_node_policy_attachments
 }
 
+
+module "container_registry" {
+  source = "./container-registry"
+
+  repository_name = "${var.project}-repository"
+}
