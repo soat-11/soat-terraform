@@ -1,12 +1,5 @@
-
 data "aws_iam_user" "principal_user" {
   user_name = "soat-tf"
-
-}
-
-data "aws_eks_access_entry" "eks_access" {
-  cluster_name  = var.cluster_name
-  principal_arn = data.aws_iam_user.principal_user.arn
 }
 
 resource "aws_eks_access_entry" "access_entry" {
