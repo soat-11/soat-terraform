@@ -59,6 +59,12 @@ module "eks_node_role" {
 }
 
 
+module "security_group" {
+  source = "./security-group"
+
+  project = var.project
+  vpc_id  = module.vpc.vpc_id
+}
 
 
 module "eks_service" {
@@ -69,10 +75,11 @@ module "eks_service" {
 
   ]
 
-  vpc_id       = module.vpc.vpc_id
-  subnet_ids   = module.subnets.subnet_ids
-  project_name = var.project
-  eks_role_arn = module.eks_service_role.eks_role_arn
+  vpc_id             = module.vpc.vpc_id
+  subnet_ids         = module.subnets.subnet_ids
+  project_name       = var.project
+  eks_role_arn       = module.eks_service_role.eks_role_arn
+  security_group_ids = module.security_group.security_group_ids
 }
 
 
@@ -92,23 +99,6 @@ module "eks_node_group" {
 }
 
 
-data "aws_eks_cluster_auth" "eks" {
-  name = module.eks_service.cluster_name
-}
-data "aws_eks_cluster" "eks" {
-  name = module.eks_service.cluster_name
-}
-
-
-
-provider "kubernetes" {
-  host                   = data.aws_eks_cluster.eks.endpoint
-  cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks.certificate_authority[0].data)
-  token                  = data.aws_eks_cluster_auth.eks.token
-
-
-}
-
 module "access_entry" {
   source = "./access-entry"
 
@@ -116,6 +106,22 @@ module "access_entry" {
   cluster_name = module.eks_service.cluster_name
   depends_on   = [module.eks_node_group]
 }
+
+
+data "aws_eks_cluster_auth" "eks" {
+  name = module.eks_service.cluster_name
+}
+data "aws_eks_cluster" "eks" {
+  name = module.eks_service.cluster_name
+}
+
+provider "kubernetes" {
+  host                   = data.aws_eks_cluster.eks.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks.certificate_authority[0].data)
+  token                  = data.aws_eks_cluster_auth.eks.token
+}
+
+
 
 
 

@@ -20,6 +20,11 @@ variable "eks_role_arn" {
   type        = string
 }
 
+variable "security_group_ids" {
+  description = "List of security group IDs for the EKS cluster"
+  type        = list(string)
+}
+
 # variable "policy_attachments" {
 #   description = "Policy attachment for the EKS cluster"
 #   type        = list(string)

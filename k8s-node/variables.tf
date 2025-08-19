@@ -22,3 +22,11 @@ variable "node_policy_attachments" {
   description = "EKS Node Group IAM Policy Attachments"
   type        = list(string)
 }
+
+
+variable "instance_types" {
+  description = "Instance types for the EKS Node Group"
+  type        = list(string)
+  default     = ["t3.small"]
+
+}

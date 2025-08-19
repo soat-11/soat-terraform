@@ -16,7 +16,7 @@ resource "aws_eks_access_entry" "access_entry" {
   type              = "STANDARD"
 }
 
-resource "aws_eks_access_policy_association" "example" {
+resource "aws_eks_access_policy_association" "eks_access_policy" {
   cluster_name  = var.cluster_name
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
   principal_arn = data.aws_iam_user.principal_user.arn
