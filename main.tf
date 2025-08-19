@@ -4,6 +4,13 @@ module "provider" {
   region = var.region
 }
 
+module "container_registry" {
+  source = "./container-registry"
+
+  repository_name = "${var.project}-repository"
+}
+
+
 module "vpc" {
   source = "./vpc"
 }
@@ -58,7 +65,8 @@ module "eks_service" {
   source = "./k8s-service"
   depends_on = [
     module.subnets, module.route-table,
-    module.eks_service_role.eks_policy_attachments
+    module.eks_service_role.eks_policy_attachments,
+
   ]
 
   vpc_id       = module.vpc.vpc_id
@@ -84,8 +92,36 @@ module "eks_node_group" {
 }
 
 
-module "container_registry" {
-  source = "./container-registry"
-
-  repository_name = "${var.project}-repository"
+data "aws_eks_cluster_auth" "eks" {
+  name = module.eks_service.cluster_name
 }
+data "aws_eks_cluster" "eks" {
+  name = module.eks_service.cluster_name
+}
+
+
+
+provider "kubernetes" {
+  host                   = data.aws_eks_cluster.eks.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks.certificate_authority[0].data)
+  token                  = data.aws_eks_cluster_auth.eks.token
+
+
+}
+
+module "access_entry" {
+  source = "./access-entry"
+
+  eks_role_arn = module.eks_service.eks_service_role_arn
+  cluster_name = module.eks_service.cluster_name
+  depends_on   = [module.eks_node_group]
+}
+
+
+
+# module "api_deployment" {
+#   source = "./k8s-deployment"
+
+#   app_name = "soat-api-deployment"
+#   image    = "${module.container_registry.repository_url}:latest"
+# }
