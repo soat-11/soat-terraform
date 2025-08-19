@@ -116,6 +116,7 @@ data "aws_eks_cluster" "eks" {
 }
 
 provider "kubernetes" {
+  config_path            = "~/.kube/config"
   host                   = data.aws_eks_cluster.eks.endpoint
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks.certificate_authority[0].data)
   token                  = data.aws_eks_cluster_auth.eks.token
@@ -125,9 +126,9 @@ provider "kubernetes" {
 
 
 
-# module "api_deployment" {
-#   source = "./k8s-deployment"
+module "api_deployment" {
+  source = "./k8s-deployment"
 
-#   app_name = "soat-api-deployment"
-#   image    = "${module.container_registry.repository_url}:latest"
-# }
+  app_name = "soat-api-deployment"
+  image    = "${module.container_registry.repository_url}:latest"
+}
