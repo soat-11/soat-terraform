@@ -124,10 +124,21 @@ provider "kubernetes" {
 
 
 
+provider "helm" {
+
+  kubernetes = {
+    config_path            = "~/.kube/config"
+    host                   = data.aws_eks_cluster.eks.endpoint
+    cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks.certificate_authority[0].data)
+    token                  = data.aws_eks_cluster_auth.eks.token
+  }
+
+
+}
 
 
 module "api_deployment" {
-  source = "./k8s-deployment"
+  source = "./k8s-api"
 
   app_name = "soat-api-deployment"
   image    = "${module.container_registry.repository_url}:latest"
