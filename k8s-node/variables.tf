@@ -21,6 +21,7 @@ variable "subnet_ids" {
 variable "node_policy_attachments" {
   description = "EKS Node Group IAM Policy Attachments"
   type        = list(string)
+  default     = []
 }
 
 

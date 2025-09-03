@@ -1,6 +1,7 @@
+data "aws_caller_identity" "current" {}
 resource "aws_eks_cluster" "eks_cluster" {
   name     = "${var.project_name}-eks-cluster"
-  role_arn = var.eks_role_arn
+  role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole"
 
   access_config {
     authentication_mode = "API"

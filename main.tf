@@ -1,23 +1,21 @@
+data "aws_caller_identity" "current" {}
+
 module "provider" {
   source = "./provider"
-
   region = var.region
 }
 
 module "container_registry" {
-  source = "./container-registry"
-
+  source          = "./container-registry"
   repository_name = "${var.project}-repository"
 }
-
 
 module "vpc" {
   source = "./vpc"
 }
 
 module "bucket" {
-  source = "./bucket"
-
+  source  = "./bucket"
   project = var.project
 }
 
@@ -30,9 +28,8 @@ module "subnets" {
 }
 
 module "internet_gateway" {
-  source = "./internet-gateway"
-  vpc_id = module.vpc.vpc_id
-
+  source     = "./internet-gateway"
+  vpc_id     = module.vpc.vpc_id
   depends_on = [module.vpc]
 }
 
@@ -44,102 +41,80 @@ module "route-table" {
   subnet_ids          = module.subnets.subnet_ids
 }
 
-module "eks_service_role" {
-  source = "./k8s-service-role"
-
-  project_name = var.project
-}
-
-
-module "eks_node_role" {
-  source = "./k8s-node-role"
-
-
-  project = var.project
-}
-
-
 module "security_group" {
-  source = "./security-group"
-
+  source  = "./security-group"
   project = var.project
   vpc_id  = module.vpc.vpc_id
 }
 
-
+# Cluster com LabRole
 module "eks_service" {
-  source = "./k8s-service"
-  depends_on = [
-    module.subnets, module.route-table,
-    module.eks_service_role.eks_policy_attachments,
-
-  ]
+  source     = "./k8s-service"
+  depends_on = [module.subnets, module.route-table]
 
   vpc_id             = module.vpc.vpc_id
   subnet_ids         = module.subnets.subnet_ids
   project_name       = var.project
-  eks_role_arn       = module.eks_service_role.eks_role_arn
+  eks_role_arn       = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole"
   security_group_ids = module.security_group.security_group_ids
 }
 
-
-
+# Node group com LabRole
 module "eks_node_group" {
-  source = "./k8s-node"
-  depends_on = [
-    module.eks_service,
-    module.eks_node_role
-  ]
+  source     = "./k8s-node"
+  depends_on = [module.eks_service]
 
-  cluster_name            = module.eks_service.cluster_name
-  project                 = var.project
-  eks_role_arn            = module.eks_node_role.eks_node_role_arn
-  subnet_ids              = module.subnets.subnet_ids
-  node_policy_attachments = module.eks_node_role.eks_node_policy_attachments
-}
-
-
-module "access_entry" {
-  source = "./access-entry"
-
-  eks_role_arn = module.eks_service.eks_service_role_arn
   cluster_name = module.eks_service.cluster_name
-  depends_on   = [module.eks_node_group]
+  project      = var.project
+  eks_role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole"
+  subnet_ids   = module.subnets.subnet_ids
 }
 
+resource "aws_eks_access_entry" "access_entry" {
+  cluster_name      = module.eks_service.cluster_name
+  principal_arn     = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/voclabs"
+  kubernetes_groups = ["group-soat"]
+  type              = "STANDARD"
+
+  depends_on = [module.eks_node_group]
+}
+
+resource "aws_eks_access_policy_association" "eks_access_policy" {
+  cluster_name  = module.eks_service.cluster_name
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+  principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/voclabs"
+
+  access_scope {
+    type = "cluster"
+  }
+
+  depends_on = [aws_eks_access_entry.access_entry]
+}
+
+data "aws_eks_cluster" "eks" {
+  name       = module.eks_service.cluster_name
+  depends_on = [module.eks_service]
+}
 
 data "aws_eks_cluster_auth" "eks" {
-  name = module.eks_service.cluster_name
-}
-data "aws_eks_cluster" "eks" {
-  name = module.eks_service.cluster_name
+  name       = module.eks_service.cluster_name
+  depends_on = [module.eks_service]
 }
 
 provider "kubernetes" {
-  config_path            = "~/.kube/config"
   host                   = data.aws_eks_cluster.eks.endpoint
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks.certificate_authority[0].data)
   token                  = data.aws_eks_cluster_auth.eks.token
 }
 
-
-
 provider "helm" {
-
   kubernetes = {
-    config_path            = "~/.kube/config"
     host                   = data.aws_eks_cluster.eks.endpoint
     cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks.certificate_authority[0].data)
     token                  = data.aws_eks_cluster_auth.eks.token
   }
-
-
 }
 
-
-module "api_deployment" {
-  source = "./k8s-api"
-
-  app_name = "soat-api-deployment"
-  image    = "${module.container_registry.repository_url}:latest"
+output "principal_arn" {
+  value = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/voclabs"
 }
