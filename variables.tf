@@ -9,3 +9,11 @@ variable "region" {
   type        = string
   default     = "us-east-1"
 }
+
+
+variable "db_password" {
+  description = "The password for the database admin user"
+  type        = string
+  sensitive   = true
+
+}
