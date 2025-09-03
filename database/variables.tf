@@ -41,3 +41,8 @@ variable "security_group_ids" {
   type        = list(string)
   default     = []
 }
+
+variable "db_subnet_group_name" {
+  description = "The name of the DB subnet group"
+  type        = string
+}

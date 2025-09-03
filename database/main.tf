@@ -24,6 +24,7 @@ resource "aws_db_instance" "db_instance" {
   db_name                = var.db_name
   allocated_storage      = 10
   skip_final_snapshot    = true
-  publicly_accessible    = true
+  publicly_accessible    = false
   vpc_security_group_ids = var.security_group_ids
+  db_subnet_group_name   = var.db_subnet_group_name
 }

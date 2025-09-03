@@ -49,7 +49,7 @@ module "security_group" {
 
 # Cluster com LabRole
 module "eks_service" {
-  source     = "./k8s-service"
+  source     = "./k8s/cluster"
   depends_on = [module.subnets, module.route-table]
 
   vpc_id             = module.vpc.vpc_id
@@ -61,7 +61,7 @@ module "eks_service" {
 
 # Node group com LabRole
 module "eks_node_group" {
-  source     = "./k8s-node"
+  source     = "./k8s/node"
   depends_on = [module.eks_service]
 
   cluster_name = module.eks_service.cluster_name
@@ -120,8 +120,23 @@ output "principal_arn" {
 }
 
 
-module "database" {
-  source     = "./database"
+module "database-sg" {
+  source = "./database-sg"
+  vpc_id = module.vpc.vpc_id
+}
+
+module "database-subnet" {
+  source     = "./database-subnet"
   depends_on = [module.subnets, module.route-table]
-  password   = var.db_password
+
+  subnet_ids = module.subnets.subnet_ids
+
+}
+
+module "database" {
+  source               = "./database"
+  depends_on           = [module.subnets, module.route-table]
+  password             = var.db_password
+  db_subnet_group_name = module.database-subnet.database_subnet_group_name
+  security_group_ids   = [module.database-sg.rds_security_group_id]
 }
