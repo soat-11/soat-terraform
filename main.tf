@@ -140,3 +140,31 @@ module "database" {
   db_subnet_group_name = module.database-subnet.database_subnet_group_name
   security_group_ids   = [module.database-sg.rds_security_group_id]
 }
+
+
+module "secrets" {
+  source = "./k8s/secrets"
+
+  db_name                      = module.database.db_name
+  db_user                      = module.database.db_user
+  db_password                  = module.database.db_password
+  db_port                      = module.database.db_port
+  db_host                      = module.database.db_host
+  app_port                     = var.app_port
+  app_base_url                 = "/"
+  payment_access_token         = var.payment_access_token
+  payment_api_url              = var.payment_api_url
+  payment_user_id              = var.payment_user_id
+  payment_pos_id               = var.payment_pos_id
+  webhook_secret_signature_key = var.webhook_secret_signature_key
+  webhook_api_url              = "/"
+}
+
+module "deployment" {
+  source = "./k8s/deployment"
+
+  app_name    = var.project
+  image       = module.container_registry.repository_url
+  secret_name = module.secrets.secret_name
+  depends_on  = [module.eks_node_group, module.eks_service, module.database, module.secrets]
+}

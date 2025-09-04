@@ -1,76 +1,7 @@
-resource "kubernetes_deployment" "kubernetes_deployment" {
-  metadata {
-    name = "${var.app_name}-deployment"
-
-  }
-
-  spec {
-    replicas = var.replicas
-
-    selector {
-      match_labels = {
-        app = var.app_name
-      }
-    }
-
-    template {
-      metadata {
-        labels = {
-          app = var.app_name
-        }
-      }
-      spec {
-        container {
-          name              = var.app_name
-          image             = var.image
-          image_pull_policy = "Always"
-          port {
-            container_port = var.container_port
-            name           = "http"
-            protocol       = "TCP"
-          }
-          env_from {
-            secret_ref {
-              name = var.secret_name
-            }
-          }
-
-          resources {
-            requests = {
-              cpu    = var.cpu_request
-              memory = var.memory_request
-            }
-            limits = {
-              cpu    = var.cpu_limit
-              memory = var.memory_limit
-            }
-          }
-        }
-      }
-    }
-  }
-
-}
 
 
-resource "kubernetes_service" "soat_api_service" {
-  metadata {
-    name = "${var.app_name}-service"
-  }
 
-  spec {
-    type = "ClusterIP"
 
-    selector = {
-      app = "${var.app_name}-deployment"
-    }
-
-    port {
-      port        = 5000
-      target_port = 3010
-    }
-  }
-}
 
 resource "kubernetes_horizontal_pod_autoscaler_v2" "soat_api_hpa" {
   metadata {
@@ -203,26 +134,6 @@ resource "kubernetes_ingress_v1" "soat_api_ingress" {
 #     }
 #   }
 # }
-resource "kubernetes_secret" "soat_api_secret" {
-  metadata {
-    name = "soat-api-secret"
-  }
-  type = "Opaque"
-  data = {
-    DB_NAME                      = "ZXhhbXBsZQ=="
-    DB_USER                      = "ZXhhbXBsZQ=="
-    DB_PASSWORD                  = "ZXhhbXBsZQ=="
-    DB_PORT                      = "ZXhhbXBsZQ=="
-    DB_HOST                      = "ZXhhbXBsZQ=="
-    APP_PORT                     = "ZXhhbXBsZQ=="
-    APP_BASE_URL                 = "ZXhhbXBsZQ=="
-    PAYMENT_ACCESS_TOKEN         = "ZXhhbXBsZQ=="
-    PAYMENT_API_URL              = "ZXhhbXBsZQ=="
-    PAYMENT_USER_ID              = "ZXhhbXBsZQ=="
-    PAYMENT_POS_ID               = "ZXhhbXBsZQ=="
-    WEBHOOK_SECRET_SIGNATURE_KEY = "ZXhhbXBsZQ=="
-    WEBHOOK_API_URL              = "ZXhhbXBsZQ=="
-  }
-}
+
 
 
