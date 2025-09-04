@@ -168,3 +168,23 @@ module "deployment" {
   secret_name = module.secrets.secret_name
   depends_on  = [module.eks_node_group, module.eks_service, module.database, module.secrets]
 }
+
+
+module "service" {
+  source = "./k8s/service"
+
+  app_name       = var.project
+  deployment     = module.deployment.deployment_name
+  service_port   = 5000
+  container_port = var.app_port
+  depends_on     = [module.deployment]
+}
+
+module "ingress" {
+  source = "./k8s/ingress"
+
+  app_name     = var.project
+  service_name = module.service.service_name
+  service_port = module.service.service_port
+  depends_on   = [module.service]
+}
