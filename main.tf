@@ -115,9 +115,7 @@ provider "helm" {
   }
 }
 
-output "principal_arn" {
-  value = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/voclabs"
-}
+
 
 
 module "database-sg" {
@@ -174,9 +172,8 @@ module "service" {
   source = "./k8s/service"
 
   app_name       = var.project
-  deployment     = module.deployment.deployment_name
   service_port   = 5000
-  container_port = var.app_port
+  container_port = module.deployment.deployment_port
   depends_on     = [module.deployment]
 }
 
@@ -185,6 +182,16 @@ module "ingress" {
 
   app_name     = var.project
   service_name = module.service.service_name
-  service_port = module.service.service_port
+  service_port = 5000
   depends_on   = [module.service]
+}
+
+
+output "principal_arn" {
+  value = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/voclabs"
+}
+
+output "ingress_url" {
+  value = module.ingress.url
+
 }

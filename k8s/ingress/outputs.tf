@@ -1,7 +1,3 @@
-
-
 output "url" {
-  value = kubernetes_ingress_v1.soat_api_ingress.spec[0].rule[0].host
+  value = "http://${data.kubernetes_service.nginx_lb.status[0].load_balancer[0].ingress[0].hostname}"
 }
-
-

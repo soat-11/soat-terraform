@@ -3,10 +3,7 @@ variable "app_name" {
   type        = string
 }
 
-variable "deployment" {
-  description = "Kubernetes deployment name"
-  type        = string
-}
+
 
 
 variable "container_port" {

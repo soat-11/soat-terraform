@@ -1,4 +1,3 @@
-
 resource "helm_release" "ingress_nginx" {
   name             = "ingress-nginx"
   repository       = "https://kubernetes.github.io/ingress-nginx"
@@ -8,27 +7,19 @@ resource "helm_release" "ingress_nginx" {
   create_namespace = true
 }
 
-resource "null_resource" "wait_lb" {
-  depends_on = [helm_release.ingress_nginx]
-
-  provisioner "local-exec" {
-    command = "sleep 30"
-  }
-}
-
 data "kubernetes_service" "nginx_lb" {
   metadata {
     name      = "ingress-nginx-controller"
     namespace = "ingress-nginx"
   }
 
-  depends_on = [null_resource.wait_lb]
+  depends_on = [helm_release.ingress_nginx]
 }
-
 
 resource "kubernetes_ingress_v1" "soat_api_ingress" {
   metadata {
-    name = "${var.app_name}-ingress"
+    name      = "${var.app_name}-ingress"
+    namespace = "default"
     annotations = {
       "nginx.ingress.kubernetes.io/rewrite-target" = "/"
     }
@@ -39,7 +30,6 @@ resource "kubernetes_ingress_v1" "soat_api_ingress" {
 
     rule {
       host = data.kubernetes_service.nginx_lb.status[0].load_balancer[0].ingress[0].hostname
-
 
       http {
         path {
@@ -59,3 +49,5 @@ resource "kubernetes_ingress_v1" "soat_api_ingress" {
     }
   }
 }
+
+
