@@ -4,7 +4,11 @@ variable "app_name" {
 }
 
 
+variable "deployment_name" {
+  description = "Deployment name"
+  type        = string
 
+}
 
 variable "container_port" {
   description = "Container port for the service"

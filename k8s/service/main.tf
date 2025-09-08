@@ -7,7 +7,7 @@ resource "kubernetes_service" "soat_api_service" {
     type = "ClusterIP"
 
     selector = {
-      app = var.app_name
+      app = var.deployment_name
     }
 
     port {

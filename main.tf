@@ -167,14 +167,30 @@ module "deployment" {
   depends_on  = [module.eks_node_group, module.eks_service, module.database, module.secrets]
 }
 
+module "metrics" {
+  source = "./k8s/metrics"
+
+  depends_on = [module.eks_node_group, module.eks_service]
+
+}
+
+module "deployment-hpa" {
+  source = "./k8s/deployment-hpa"
+
+  deployment_name = module.deployment.deployment_name
+  app_name        = var.project
+  depends_on      = [module.deployment, module.metrics]
+
+}
 
 module "service" {
   source = "./k8s/service"
 
-  app_name       = var.project
-  service_port   = 5000
-  container_port = module.deployment.deployment_port
-  depends_on     = [module.deployment]
+  app_name        = var.project
+  deployment_name = module.deployment.deployment_name
+  service_port    = 5000
+  container_port  = module.deployment.deployment_port
+  depends_on      = [module.deployment]
 }
 
 module "ingress" {
