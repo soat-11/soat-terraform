@@ -6,7 +6,7 @@ variable "app_name" {
 variable "replicas" {
   description = "Number of replicas for the deployment"
   type        = number
-  default     = 2
+  default     = 1
 
 }
 

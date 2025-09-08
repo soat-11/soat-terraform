@@ -50,3 +50,16 @@ variable "app_port" {
   type        = number
   default     = 3010
 }
+
+variable "payment_webhook_url" {
+  description = "URL for the payment webhook"
+  type        = string
+
+}
+
+
+variable "app_base_url" {
+  description = "Base URL for the application"
+  type        = string
+
+}

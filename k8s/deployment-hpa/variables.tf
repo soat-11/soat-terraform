@@ -16,7 +16,7 @@ variable "min_replicas" {
 variable "max_replicas" {
   description = "The maximum number of replicas"
   type        = number
-  default     = 2
+  default     = 1
 }
 
 variable "average_cpu_utilization" {

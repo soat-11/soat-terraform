@@ -3,8 +3,18 @@ resource "kubernetes_deployment" "deployment" {
     name = "${var.app_name}-deployment"
   }
 
+
+
   spec {
     replicas = var.replicas
+
+    strategy {
+      type = "RollingUpdate"
+      rolling_update {
+        max_surge       = "25%"
+        max_unavailable = "25%"
+      }
+    }
 
     selector {
       match_labels = {

@@ -164,7 +164,12 @@ module "deployment" {
   app_name    = var.project
   image       = module.container_registry.repository_url
   secret_name = module.secrets.secret_name
-  depends_on  = [module.eks_node_group, module.eks_service, module.database, module.secrets]
+  depends_on = [
+    module.eks_node_group,
+    module.eks_service,
+    module.database,
+    module.secrets
+  ]
 }
 
 module "metrics" {
