@@ -113,6 +113,7 @@ provider "helm" {
     cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks.certificate_authority[0].data)
     token                  = data.aws_eks_cluster_auth.eks.token
   }
+
 }
 
 
@@ -175,7 +176,7 @@ module "deployment" {
 module "metrics" {
   source = "./k8s/metrics"
 
-  depends_on = [module.eks_node_group, module.eks_service]
+  depends_on = [module.eks_node_group, module.eks_service, aws_eks_access_policy_association, aws_eks_access_entry.access_entry]
 
 }
 
