@@ -215,5 +215,11 @@ output "principal_arn" {
 
 output "ingress_url" {
   value = module.ingress.url
+}
 
+module "lambda" {
+  source = "./lambda"
+
+  project              = var.project
+  lambda_package       = var.lambda_package
 }
