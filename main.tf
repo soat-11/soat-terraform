@@ -221,3 +221,7 @@ module "lambda" {
   source = "./lambda"
   project              = var.project
 }
+
+module "cognito" {
+  source = "./cognito"
+}
