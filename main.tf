@@ -219,7 +219,5 @@ output "ingress_url" {
 
 module "lambda" {
   source = "./lambda"
-
   project              = var.project
-  lambda_package       = var.lambda_package
 }

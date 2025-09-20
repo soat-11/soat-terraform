@@ -62,8 +62,3 @@ variable "app_base_url" {
   description = "Base URL for the application"
   type        = string
 }
-
-variable "lambda_package" {
-  description = "Path to the Lambda ZIP file (generated via build)"
-  type        = string
-}

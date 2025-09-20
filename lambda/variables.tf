@@ -1,9 +1,4 @@
 variable "project" {
-  description = "Prefixo do projeto para nomear recursos"
-  type        = string
-}
-
-variable "lambda_package" {
-  description = "Caminho para o arquivo ZIP do Lambda (gerado via build)"
+  description = "The name of the project"
   type        = string
 }

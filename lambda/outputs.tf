@@ -1,9 +1,9 @@
 output "lambda_auth_arn" {
-  description = "ARN da função Lambda de autenticação"
+  description = "ARN of the Lambda function"
   value       = aws_lambda_function.auth.arn
 }
 
 output "lambda_auth_name" {
-  description = "Nome da função Lambda"
+  description = "Name of the Lambda function"
   value       = aws_lambda_function.auth.function_name
 }
