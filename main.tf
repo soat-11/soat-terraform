@@ -217,3 +217,7 @@ output "ingress_url" {
   value = module.ingress.url
 
 }
+
+module "cognito" {
+  source = "./cognito"
+}
