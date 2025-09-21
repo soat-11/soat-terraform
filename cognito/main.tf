@@ -1,6 +1,11 @@
 resource "aws_cognito_user_pool" "aws_cognito_create_pool" {
   name = "soat-user-pool"
 
+  lifecycle {
+    create_before_destroy = true
+    ignore_changes = [ schema ]
+  }
+
   auto_verified_attributes = ["email"]
 
   # Login será feito pelo CPF (armazenado em username)

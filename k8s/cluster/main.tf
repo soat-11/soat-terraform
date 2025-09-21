@@ -14,10 +14,4 @@ resource "aws_eks_cluster" "eks_cluster" {
 
     security_group_ids = var.security_group_ids
   }
-
-  # depends_on = var.policy_attachments
 }
-
-
-
-
