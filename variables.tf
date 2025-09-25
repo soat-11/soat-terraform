@@ -61,5 +61,29 @@ variable "payment_webhook_url" {
 variable "app_base_url" {
   description = "Base URL for the application"
   type        = string
-
 }
+
+variable "db_name" {
+  description = "The name of the database"
+  type        = string
+  default     = "soatdb"
+}
+
+variable "db_user" {
+  description = "The admin user for the database"
+  type        = string
+  default     = "admin"
+}
+
+variable "db_port" {
+  description = "The port for the database"
+  type        = number
+  default     = 5432
+}
+
+variable "db_host" {
+  description = "The host for the database"
+  type        = string
+}
+
+

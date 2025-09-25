@@ -117,38 +117,14 @@ provider "helm" {
 }
 
 
-
-
-module "database-sg" {
-  source = "./database-sg"
-  vpc_id = module.vpc.vpc_id
-}
-
-module "database-subnet" {
-  source     = "./database-subnet"
-  depends_on = [module.subnets, module.route-table]
-
-  subnet_ids = module.subnets.subnet_ids
-
-}
-
-module "database" {
-  source               = "./database"
-  depends_on           = [module.subnets, module.route-table]
-  password             = var.db_password
-  db_subnet_group_name = module.database-subnet.database_subnet_group_name
-  security_group_ids   = [module.database-sg.rds_security_group_id]
-}
-
-
 module "secrets" {
   source = "./k8s/secrets"
 
-  db_name                      = module.database.db_name
-  db_user                      = module.database.db_user
-  db_password                  = module.database.db_password
-  db_port                      = module.database.db_port
-  db_host                      = module.database.db_host
+  db_name                      = var.db_name
+  db_user                      = var.db_user
+  db_password                  = var.db_password
+  db_port                      = var.db_port
+  db_host                      = var.db_host
   app_port                     = var.app_port
   app_base_url                 = "/"
   payment_access_token         = var.payment_access_token
@@ -168,7 +144,6 @@ module "deployment" {
   depends_on = [
     module.eks_node_group,
     module.eks_service,
-    module.database,
     module.secrets
   ]
 }
