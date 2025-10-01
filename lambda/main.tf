@@ -1,31 +1,33 @@
-data "aws_caller_identity" "current" {
-}
 resource "aws_s3_bucket" "lambda_bucket" {
-  bucket = "${var.project}-lambda-bucket"
-}
+  bucket = "${var.project}-lambda"
 
-resource "aws_s3_object" "upload_lambda" {
-  bucket = aws_s3_bucket.lambda_bucket.id
-  key    = "functions.zip"
-  source = "${path.module}/functions.zip"
+    tags = {
+      Name = "${var.project}-lambda"
+  }
 }
 
 resource "aws_lambda_function" "signup" {
   function_name = "${var.project}-signup"
-  role          = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole"
+  role          = var.role_arn
   handler       = "functions/signup.handler"
   runtime       = "nodejs22.x"
+  timeout = 15
 
   s3_bucket = aws_s3_bucket.lambda_bucket.id
-  s3_key    = aws_s3_object.upload_lambda.key
+  s3_key    = "lambda.zip"
+
+  depends_on = [aws_s3_bucket.lambda_bucket]
 }
 
 resource "aws_lambda_function" "login" {
   function_name = "${var.project}-login"
-  role          = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole"
+  role          = var.role_arn
   handler       = "functions/login.handler"
   runtime       = "nodejs22.x"
+  timeout = 15
 
   s3_bucket = aws_s3_bucket.lambda_bucket.id
-  s3_key    = aws_s3_object.upload_lambda.key
+  s3_key    = "lambda.zip"
+
+  depends_on = [aws_s3_bucket.lambda_bucket]
 }

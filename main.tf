@@ -9,6 +9,7 @@ module "container_registry" {
   source          = "./container-registry"
   repository_name = "${var.project}-repository"
 }
+
 module "vpc" {
   source = "./vpc"
 }
@@ -115,6 +116,9 @@ provider "helm" {
 
 }
 
+
+
+
 module "database-sg" {
   source = "./database-sg"
   vpc_id = module.vpc.vpc_id
@@ -195,15 +199,32 @@ module "service" {
   depends_on      = [module.deployment]
 }
 
-# output "principal_arn" {
-#   value = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/voclabs"
-# }
-module "aws_cognito_user_pool" {
+module "ingress" {
+  source = "./k8s/ingress"
+
+  app_name     = var.project
+  service_name = module.service.service_name
+  service_port = 5000
+  depends_on   = [module.service]
+}
+
+
+output "principal_arn" {
+  value = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/voclabs"
+}
+
+output "ingress_url" {
+  value = module.ingress.url
+
+}
+
+module "cognito" {
   source = "./cognito"
 }
-module "aws_lambda_function" {
+module "lambda" {
   source = "./lambda"
   project = var.project
+  role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole"
 }
 
 module "api_gateway" {
@@ -211,12 +232,12 @@ module "api_gateway" {
 
   project               = var.project
   region                = var.region
-  signup_lambda_arn     = module.aws_lambda_function.signup_lambda_arn
-  signup_function_name  = module.aws_lambda_function.function_name_signup
-  login_lambda_arn      = module.aws_lambda_function.login_lambda_arn
-  login_function_name   = module.aws_lambda_function.function_name_login
-  cognito_user_pool_arn = module.aws_cognito_user_pool.user_pool_arn
-  eks_nlb_hostname      = module.service.nlb_hostname
+  signup_lambda_arn     = module.lambda.signup_lambda_arn
+  signup_function_name  = module.lambda.function_name_signup
+  login_lambda_arn      = module.lambda.login_lambda_arn
+  login_function_name   = module.lambda.function_name_login
+  cognito_user_pool_arn = module.cognito.user_pool_arn
+  eks_nlb_hostname      = module.ingress.url
 }
 
 output "url_api_gateway" {
