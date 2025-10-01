@@ -14,7 +14,3 @@ output "eks_service_role_arn" {
   value = aws_eks_cluster.eks_cluster.role_arn
 
 }
-
-# output "eks_access_entry_outputs" {
-#   value = aws_eks_access_entry.eks_access
-# }

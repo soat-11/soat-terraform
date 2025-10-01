@@ -50,4 +50,3 @@ resource "kubernetes_ingress_v1" "soat_api_ingress" {
   }
 }
 
-

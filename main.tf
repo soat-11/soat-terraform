@@ -221,3 +221,25 @@ output "ingress_url" {
 module "cognito" {
   source = "./cognito"
 }
+module "lambda" {
+  source = "./lambda"
+  project = var.project
+  role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole"
+}
+
+module "api_gateway" {
+  source = "./api-gateway"
+
+  project               = var.project
+  region                = var.region
+  signup_lambda_arn     = module.lambda.signup_lambda_arn
+  signup_function_name  = module.lambda.function_name_signup
+  login_lambda_arn      = module.lambda.login_lambda_arn
+  login_function_name   = module.lambda.function_name_login
+  cognito_user_pool_arn = module.cognito.user_pool_arn
+  eks_nlb_hostname      = module.ingress.url
+}
+
+output "url_api_gateway" {
+  value = module.api_gateway.rest_api_invoke_url
+}

@@ -61,5 +61,4 @@ variable "payment_webhook_url" {
 variable "app_base_url" {
   description = "Base URL for the application"
   type        = string
-
 }
