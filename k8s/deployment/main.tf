@@ -1,9 +1,7 @@
 resource "kubernetes_deployment" "deployment" {
   metadata {
-    name = "${var.app_name}-deployment1"
+    name = "${var.app_name}-deployment"
   }
-
-
 
   spec {
     replicas = var.replicas
@@ -18,14 +16,14 @@ resource "kubernetes_deployment" "deployment" {
 
     selector {
       match_labels = {
-        app = "${var.app_name}-deployment1"
+        app = "${var.app_name}-deployment"
       }
     }
 
     template {
       metadata {
         labels = {
-          app = "${var.app_name}-deployment1"
+          app = "${var.app_name}-deployment"
         }
       }
       spec {
