@@ -3,8 +3,6 @@ resource "kubernetes_deployment" "deployment" {
     name = "${var.app_name}-deployment"
   }
 
-
-
   spec {
     replicas = var.replicas
 
