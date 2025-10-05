@@ -32,10 +32,10 @@ resource "aws_cognito_user_pool_client" "aws_cognito_create_app_client" {
   generate_secret = false 
 
   explicit_auth_flows = [
-    "ALLOW_USER_PASSWORD_AUTH",
+    "ALLOW_ADMIN_USER_PASSWORD_AUTH",
     "ALLOW_REFRESH_TOKEN_AUTH",
-    "ALLOW_USER_SRP_AUTH",
   ]
+
 }
 
 resource "aws_ssm_parameter" "user_pool_id" {

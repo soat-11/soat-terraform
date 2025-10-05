@@ -238,6 +238,8 @@ module "api_gateway" {
   login_function_name   = module.lambda.function_name_login
   cognito_user_pool_arn = module.cognito.user_pool_arn
   eks_nlb_hostname      = module.ingress.url
+
+  depends_on = [ module.ingress ]
 }
 
 output "url_api_gateway" {
