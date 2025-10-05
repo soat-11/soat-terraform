@@ -169,7 +169,7 @@ module "service" {
 
   app_name        = var.project
   deployment_name = module.deployment.deployment_name
-  service_port    = 5000
+  service_port    = 80
   container_port  = module.deployment.deployment_port
   depends_on      = [module.deployment]
 }

@@ -13,8 +13,10 @@ resource "aws_lambda_function" "signup" {
   runtime       = "nodejs22.x"
   timeout = 15
 
-  s3_bucket = aws_s3_bucket.lambda_bucket.id
-  s3_key    = "lambda.zip"
+  filename         = "lambda.zip" 
+  source_code_hash = filebase64sha256("lambda.zip")
+  # s3_bucket = aws_s3_bucket.lambda_bucket.id
+  # s3_key    = "lambda.zip"
 
   depends_on = [aws_s3_bucket.lambda_bucket]
 }
@@ -26,8 +28,10 @@ resource "aws_lambda_function" "login" {
   runtime       = "nodejs22.x"
   timeout = 15
 
-  s3_bucket = aws_s3_bucket.lambda_bucket.id
-  s3_key    = "lambda.zip"
+  filename         = "lambda.zip" 
+  source_code_hash = filebase64sha256("lambda.zip")
+  # s3_bucket = aws_s3_bucket.lambda_bucket.id
+  # s3_key    = "lambda.zip"
 
   depends_on = [aws_s3_bucket.lambda_bucket]
 }

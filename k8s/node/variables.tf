@@ -28,6 +28,6 @@ variable "node_policy_attachments" {
 variable "instance_types" {
   description = "Instance types for the EKS Node Group"
   type        = list(string)
-  default     = ["t3.small"]
+  default     = ["t3.medium"]
 
 }
