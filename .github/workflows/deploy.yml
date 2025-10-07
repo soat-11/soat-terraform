@@ -37,6 +37,22 @@ jobs:
         with:
           terraform_version: 1.6.0
 
+      - name: 4. Terraform Init, Validate, Plan
+        run: |
+          terraform init
+          terraform validate
+          terraform plan -no-color -input=false -out=tfplan
+        env:
+          TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+          TF_VAR_payment_access_token: ${{ secrets.PAYMENT_ACCESS_TOKEN }}
+          TF_VAR_webhook_secret_signature_key: ${{ secrets.WEBHOOK_SECRET_SIGNATURE_KEY }}
+          TF_VAR_payment_api_url: "https://api.mercadopago.com/"
+          TF_VAR_payment_user_id: "2433967284"
+          TF_VAR_payment_pos_id: "TCS001POS001"
+          TF_VAR_payment_webhook_url: "https://ad1a5610e8d7e473eb56e5d2eaa8f7b8-2024669341.us-east-1.elb.amazonaws.com"
+          TF_VAR_app_base_url: "ad3d22e4a464344fc9387954443036e6-9c2527105b2c1e4d.elb.us-east-1.amazonaws.com"
+          TF_VAR_db_host: "terraform-20251006230529750600000001.c7xxhxlosttd.us-east-1.rds.amazonaws.com"
+
       - name: 5. Salvar Plan File
         uses: actions/upload-artifact@v4
         with:
@@ -45,38 +61,3 @@ jobs:
 
       - name: 6. Exibir Plan no Pull Request (Apenas PR)
         if: github.event_name == 'pull_request'
-
-  apply:
-    name: "Terraform Apply"
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    needs: [plan]
-
-    steps:
-      - name: 1. Checkout Código
-        uses: actions/checkout@v4
-
-      - name: 2. Configurar AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: ${{ env.AWS_REGION }}
-          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ env.SECRET_AWS_ACCESS_KEY }}
-          aws-session-token: ${{ env.AWS_SESSION_TOKEN }}
-
-      - name: 3. Configurar Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.6.0
-
-      - name: 4. Terraform Init
-        run: terraform init
-
-      - name: 5. Baixar Plan File
-        uses: actions/download-artifact@v4
-        with:
-          name: tfplan
-          path: .
-
-      - name: 6. Terraform Apply
-        run: terraform apply -auto-approve tfplan
