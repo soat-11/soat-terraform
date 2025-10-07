@@ -64,16 +64,6 @@ jobs:
       - name: 6. Exibir Plan no Pull Request (Apenas PR)
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v6
-        with:
-          script: |
-            const fs = require('fs');
-            const planOutput = fs.readFileSync('tfplan.txt', 'utf8'); 
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `## ✅ Terraform Plan Gerado:\n\n<details><summary>Clique para ver o Plano</summary>\n\n\`\`\`hcl\n${planOutput}\n\`\`\`\n\n</details>`
-            });
 
   apply:
     name: "Terraform Apply"
