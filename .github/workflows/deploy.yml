@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feature/pipeline
+
   pull_request:
     branches:
       - main
@@ -12,7 +13,6 @@ on:
 env:
   AWS_REGION: us-east-1
   TF_WORKING_DIR: .
-
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
@@ -43,7 +43,7 @@ jobs:
         run: |
           terraform init
           terraform validate
-          terraform plan -no-color -input=false -out=tfplan
+          terraform plan -no-color -input=false -out=tfplan > tfplan.txt
 
       - name: 5. Salvar Plan File
         uses: actions/upload-artifact@v3
@@ -53,6 +53,18 @@ jobs:
 
       - name: 6. Exibir Plan no Pull Request (Apenas PR)
         if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            // Lê o arquivo de texto (tfplan.txt) gerado na etapa 4
+            const planOutput = fs.readFileSync('tfplan.txt', 'utf8'); 
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## ✅ Terraform Plan Gerado:\n\n<details><summary>Clique para ver o Plano</summary>\n\n\`\`\`hcl\n${planOutput}\n\`\`\`\n\n</details>`
+            });
 
   apply:
     name: "Terraform Apply"
@@ -61,7 +73,7 @@ jobs:
     needs: [plan]
 
     steps:
-      - name: 1. Checkout Código e Baixar Plan
+      - name: 1. Checkout Código
         uses: actions/checkout@v4
 
       - name: 2. Configurar AWS Credentials
