@@ -169,7 +169,7 @@ module "service" {
 
   app_name        = var.project
   deployment_name = module.deployment.deployment_name
-  service_port    = 80
+  service_port    = 5005
   container_port  = module.deployment.deployment_port
   depends_on      = [module.deployment]
 }
@@ -179,7 +179,7 @@ module "ingress" {
 
   app_name     = var.project
   service_name = module.service.service_name
-  service_port = 5000
+  service_port = module.service.service_port
   depends_on   = [module.service]
 }
 
