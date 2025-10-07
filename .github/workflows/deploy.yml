@@ -43,7 +43,17 @@ jobs:
         run: |
           terraform init
           terraform validate
-          terraform plan -no-color -input=false -out=tfplan > tfplan.txt
+          terraform plan -no-color -input=false -out=tfplan
+        env:
+          TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+          TF_VAR_payment_access_token: ${{ secrets.PAYMENT_ACCESS_TOKEN }}
+          TF_VAR_webhook_secret_signature_key: ${{ secrets.WEBHOOK_SECRET_SIGNATURE_KEY }}
+          TF_VAR_payment_api_url: "https://api.mercadopago.com/"
+          TF_VAR_payment_user_id: "2433967284"
+          TF_VAR_payment_pos_id: "TCS001POS001"
+          TF_VAR_payment_webhook_url: "https://ad1a5610e8d7e473eb56e5d2eaa8f7b8-2024669341.us-east-1.elb.amazonaws.com"
+          TF_VAR_app_base_url: "ad3d22e4a464344fc9387954443036e6-9c2527105b2c1e4d.elb.us-east-1.amazonaws.com"
+          TF_VAR_db_host: "terraform-20251006230529750600000001.c7xxhxlosttd.us-east-1.rds.amazonaws.com"
 
       - name: 5. Salvar Plan File
         uses: actions/upload-artifact@v4
@@ -57,7 +67,6 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            // Lê o arquivo de texto (tfplan.txt) gerado na etapa 4
             const planOutput = fs.readFileSync('tfplan.txt', 'utf8'); 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
