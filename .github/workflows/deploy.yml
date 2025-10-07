@@ -4,16 +4,16 @@ on:
   push:
     branches:
       - main
+      - feature/pipeline
+
   pull_request:
     branches:
       - main
 
 env:
-  # Variáveis de ambiente padrão
   AWS_REGION: us-east-1
   TF_WORKING_DIR: .
 
-  # Credenciais Temporárias da AWS Academy (Injetadas em 'with:')
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
