@@ -85,13 +85,15 @@ jobs:
 
       - name: 3. Configurar Terraform e Init
         uses: hashicorp/setup-terraform@v3
+
+      - name: 4. Terraform Init
         run: terraform init
 
-      - name: 4. Baixar Plan File
+      - name: 5. Baixar Plan File
         uses: actions/download-artifact@v4
         with:
           name: tfplan
           path: .
 
-      - name: 5. Terraform Apply
+      - name: 6. Terraform Apply
         run: terraform apply -auto-approve tfplan
