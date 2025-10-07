@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - feature/pipeline
 
   pull_request:
     branches:
@@ -86,9 +85,11 @@ jobs:
 
       - name: 3. Configurar Terraform e Init
         uses: hashicorp/setup-terraform@v3
+
+      - name: 4. Terraform Init
         run: terraform init
 
-      - name: 4. Baixar Plan File
+      - name: 5. Baixar Plan File
         uses: actions/download-artifact@v3
         with:
           name: tfplan
