@@ -1,6 +1,45 @@
+# Terraform
 .terraform/
 .terraform.lock.hcl
-.terraform.tfstate
-.terraform.tfstate.backup
+*.tfstate
+*.tfstate.backup
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Sensitive files
 terraform.tfvars
+*.auto.tfvars
 .env
+*.pem
+*.key
+
+# Local testing - data volumes
+local/mongo-data/
+local/postgres-data/
+local/volume/
+
+# Local testing - Terraform state
+local/*/terraform.tfstate
+local/*/terraform.tfstate.backup
+local/*/.terraform/
+local/*/.terraform.lock.hcl
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Lambda
+*.zip
+!cloud-base/modules/lambda/lambda.zip
