@@ -206,6 +206,61 @@ brew install docker terraform kubectl kind
 
 ### Quick Start
 
+### Create terraform.tfvars
+folder => apps
+```
+payment_vars = {
+  MERCADO_PAGO_POS_ID                            = ""
+  MERCADO_PAGO_API_URL                           = "https://api.mercadopago.com/"
+  MERCADO_PAGO_PAYMENT_ACCESS_TOKEN              = ""
+  MERCADO_PAGO_WEBHOOK_SECRET_KEY                = ""
+  NODE_ENV                                       = "development"
+  PORT                                           = 3010
+  MONGODB_URI                                    = "mongodb://admin:localpassword@host.docker.internal:27017/payment?authSource=admin"
+  AWS_REGION                                     = "us-east-1"
+  AWS_ENDPOINT                                   = "http://host.docker.internal:4566"
+  AWS_ACCESS_KEY_ID                              = "test"
+  AWS_SECRET_ACCESS_KEY                          = "test"
+  AWS_SQS_CREATE_PAYMENT_QUEUE_URL               = "http://host.docker.internal:4566/000000000000/create-payment-queue"
+  AWS_SQS_PAYMENT_PAID_QUEUE_URL                 = "http://host.docker.internal:4566/000000000000/payment-paid-queue"
+  AWS_SQS_MERCADO_PAGO_PROCESS_PAYMENT_QUEUE_URL = "http://host.docker.internal:4566/000000000000/mercado-pago-process-payment-queue"
+  AWS_SQS_CANCEL_PAYMENT_QUEUE_URL               = "http://host.docker.internal:4566/000000000000/cancel-payment-queue"
+  db_host                                        = "host.docker.internal"
+
+}
+```
+
+folder app-locals
+
+```
+payment_vars = {
+  MERCADO_PAGO_POS_ID                            = ""
+  MERCADO_PAGO_API_URL                           = "https://api.mercadopago.com/"
+  MERCADO_PAGO_PAYMENT_ACCESS_TOKEN              = ""
+  MERCADO_PAGO_WEBHOOK_SECRET_KEY                = ""
+  NODE_ENV                                       = "development"
+  PORT                                           = 3010
+  MONGODB_URI                                    = "mongodb://admin:localpassword@host.docker.internal:27017/payment?authSource=admin"
+  AWS_REGION                                     = "us-east-1"
+  AWS_ENDPOINT                                   = "http://host.docker.internal:4566"
+  AWS_ACCESS_KEY_ID                              = "test"
+  AWS_SECRET_ACCESS_KEY                          = "test"
+  AWS_SQS_CREATE_PAYMENT_QUEUE_URL               = "http://host.docker.internal:4566/000000000000/create-payment-queue"
+  AWS_SQS_PAYMENT_PAID_QUEUE_URL                 = "http://host.docker.internal:4566/000000000000/payment-paid-queue"
+  AWS_SQS_MERCADO_PAGO_PROCESS_PAYMENT_QUEUE_URL = "http://host.docker.internal:4566/000000000000/mercado-pago-process-payment-queue"
+  AWS_SQS_CANCEL_PAYMENT_QUEUE_URL               = "http://host.docker.internal:4566/000000000000/cancel-payment-queue"
+  db_host                                        = "host.docker.internal"
+
+}
+```
+
+folder cloud-base
+
+```
+project = "soat-challenge"
+region  = "us-east-1"
+```
+
 #### 1. Iniciar ambiente local
 
 ```bash
