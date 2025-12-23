@@ -12,7 +12,8 @@ resource "kubernetes_ingress_v1" "ingress" {
     ingress_class_name = "nginx"
 
     rule {
-      host = var.host
+      # If host is empty, omit it to accept any host (useful for local development)
+      host = var.host != "" ? var.host : null
 
       http {
         path {

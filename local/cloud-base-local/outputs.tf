@@ -1,41 +1,40 @@
-# Outputs for local testing
+# Outputs for local testing - mirrors production outputs
 
 output "s3_orders_bucket" {
-  value = aws_s3_bucket.orders.bucket
-}
-
-output "s3_lambda_bucket" {
-  value = aws_s3_bucket.lambda_bucket.bucket
+  value = module.bucket.bucket_name
 }
 
 output "signup_lambda_arn" {
-  value = aws_lambda_function.signup.arn
+  value = module.lambda.signup_lambda_arn
+}
+
+output "signup_function_name" {
+  value = module.lambda.function_name_signup
 }
 
 output "login_lambda_arn" {
-  value = aws_lambda_function.login.arn
+  value = module.lambda.login_lambda_arn
 }
 
-output "api_gateway_url" {
-  value = aws_api_gateway_stage.prod.invoke_url
+output "login_function_name" {
+  value = module.lambda.function_name_login
 }
 
-# Mock values for services not available in LocalStack Free
 output "cognito_user_pool_id" {
-  value       = aws_ssm_parameter.user_pool_id.value
-  description = "Mock value - Cognito not available in LocalStack Free"
-
+  value     = module.cognito.user_pool_id
   sensitive = true
 }
 
 output "cognito_app_client_id" {
-  value       = aws_ssm_parameter.app_client_id.value
-  description = "Mock value - Cognito not available in LocalStack Free"
-
+  value     = module.cognito.app_client_id
   sensitive = true
 }
 
+output "cognito_user_pool_arn" {
+  value = module.cognito.user_pool_arn
+}
+
 output "repository_url" {
-  value       = "localhost:4566/soat-challenge-repository"
-  description = "Mock value - ECR not available in LocalStack Free"
+  value       = "localhost:5000/${var.project}-repository"
+  description = "Mock value - ECR not available in LocalStack Free, use local Docker registry"
 }

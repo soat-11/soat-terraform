@@ -3,7 +3,7 @@
 # ----------------------
 resource "aws_api_gateway_rest_api" "this" {
   name        = "${var.project}-api-gateway"
-  description = "API Gateway para autenticação e EKS"
+  description = var.is_local ? "API Gateway for local testing" : "API Gateway para autenticação e EKS"
 }
 
 # ----------------------
@@ -74,7 +74,62 @@ resource "aws_lambda_permission" "allow_api_gateway_login" {
 }
 
 # ----------------------
-# Proxy para EKS - qualquer rota
+# Proxy para EKS/K8s - Payment
+# ----------------------
+resource "aws_api_gateway_resource" "payment" {
+  rest_api_id = aws_api_gateway_rest_api.this.id
+  parent_id   = aws_api_gateway_rest_api.this.root_resource_id
+  path_part   = "payment"
+}
+
+resource "aws_api_gateway_method" "payment_root" {
+  rest_api_id   = aws_api_gateway_rest_api.this.id
+  resource_id   = aws_api_gateway_resource.payment.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "payment_root" {
+  rest_api_id             = aws_api_gateway_rest_api.this.id
+  resource_id             = aws_api_gateway_resource.payment.id
+  http_method             = aws_api_gateway_method.payment_root.http_method
+  integration_http_method = "ANY"
+  type                    = "HTTP_PROXY"
+  uri                     = "http://${var.eks_nlb_hostname}/payment"
+}
+
+resource "aws_api_gateway_resource" "payment_proxy" {
+  rest_api_id = aws_api_gateway_rest_api.this.id
+  parent_id   = aws_api_gateway_resource.payment.id
+  path_part   = "{proxy+}"
+}
+
+resource "aws_api_gateway_method" "payment_any" {
+  rest_api_id   = aws_api_gateway_rest_api.this.id
+  resource_id   = aws_api_gateway_resource.payment_proxy.id
+  http_method   = "ANY"
+  authorization = "NONE"
+
+  request_parameters = {
+    "method.request.path.proxy" = true
+  }
+}
+
+resource "aws_api_gateway_integration" "payment_any" {
+  rest_api_id             = aws_api_gateway_rest_api.this.id
+  resource_id             = aws_api_gateway_resource.payment_proxy.id
+  http_method             = aws_api_gateway_method.payment_any.http_method
+  integration_http_method = "ANY"
+  type                    = "HTTP_PROXY"
+  uri                     = "http://${var.eks_nlb_hostname}/payment/{proxy}"
+
+  request_parameters = {
+    "integration.request.path.proxy" = "method.request.path.proxy"
+  }
+}
+
+# ----------------------
+# Proxy genérico para outros serviços K8s
 # ----------------------
 resource "aws_api_gateway_resource" "proxy" {
   rest_api_id = aws_api_gateway_rest_api.this.id
@@ -94,32 +149,6 @@ resource "aws_api_gateway_method" "proxy_any" {
   }
 }
 
-
-resource "aws_api_gateway_resource" "payment" {
-  rest_api_id = aws_api_gateway_rest_api.this.id
-  parent_id   = aws_api_gateway_rest_api.this.root_resource_id
-  path_part   = "payment"
-}
-
-
-resource "aws_api_gateway_resource" "payment_proxy" {
-  rest_api_id = aws_api_gateway_rest_api.this.id
-  parent_id   = aws_api_gateway_resource.payment.id
-  path_part   = "{proxy+}"
-}
-resource "aws_api_gateway_integration" "payment_any" {
-  rest_api_id             = aws_api_gateway_rest_api.this.id
-  resource_id             = aws_api_gateway_resource.payment_proxy.id
-  http_method             = aws_api_gateway_method.payment_any.http_method
-  integration_http_method = "ANY"
-  type                    = "HTTP_PROXY"
-  uri                     = "http://${var.eks_nlb_hostname}/payment/{proxy}"
-
-  request_parameters = {
-    "integration.request.path.proxy" = "method.request.path.proxy"
-  }
-}
-
 resource "aws_api_gateway_integration" "proxy_any" {
   rest_api_id             = aws_api_gateway_rest_api.this.id
   resource_id             = aws_api_gateway_resource.proxy.id
@@ -135,12 +164,31 @@ resource "aws_api_gateway_integration" "proxy_any" {
   }
 }
 
-
 # ----------------------
 # Deployment + Stage
 # ----------------------
 resource "aws_api_gateway_deployment" "deploy" {
   rest_api_id = aws_api_gateway_rest_api.this.id
+
+  triggers = {
+    redeployment = sha1(jsonencode([
+      aws_api_gateway_resource.signup.id,
+      aws_api_gateway_resource.login.id,
+      aws_api_gateway_resource.payment.id,
+      aws_api_gateway_resource.payment_proxy.id,
+      aws_api_gateway_resource.proxy.id,
+      aws_api_gateway_method.signup_post.id,
+      aws_api_gateway_method.login_post.id,
+      aws_api_gateway_method.payment_root.id,
+      aws_api_gateway_method.payment_any.id,
+      aws_api_gateway_method.proxy_any.id,
+      aws_api_gateway_integration.signup_post.id,
+      aws_api_gateway_integration.login_post.id,
+      aws_api_gateway_integration.payment_root.id,
+      aws_api_gateway_integration.payment_any.id,
+      aws_api_gateway_integration.proxy_any.id,
+    ]))
+  }
 
   lifecycle {
     create_before_destroy = true
@@ -149,7 +197,9 @@ resource "aws_api_gateway_deployment" "deploy" {
   depends_on = [
     aws_api_gateway_integration.proxy_any,
     aws_api_gateway_integration.login_post,
-    aws_api_gateway_integration.signup_post
+    aws_api_gateway_integration.signup_post,
+    aws_api_gateway_integration.payment_root,
+    aws_api_gateway_integration.payment_any
   ]
 }
 
@@ -168,7 +218,7 @@ resource "aws_api_gateway_method_settings" "settings-eks" {
   method_path = "*/*"
 
   settings {
-    metrics_enabled = false
+    metrics_enabled = var.is_local ? false : false
   }
 }
 

@@ -34,7 +34,13 @@ variable "cognito_user_pool_arn" {
 }
 
 variable "eks_nlb_hostname" {
-  description = "Hostname of the EKS NLB"
+  description = "Hostname of the EKS NLB or K8s Ingress (for local use host.docker.internal)"
   type        = string
+}
+
+variable "is_local" {
+  description = "Whether running in local environment (LocalStack)"
+  type        = bool
+  default     = false
 }
 

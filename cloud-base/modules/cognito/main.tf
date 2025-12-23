@@ -1,5 +1,9 @@
+# ----------------------
+# Real Cognito (Production only)
+# ----------------------
 resource "aws_cognito_user_pool" "aws_cognito_create_pool" {
-  name = "soat-user-pool"
+  count = var.is_local ? 0 : 1
+  name  = "${var.project}-user-pool"
 
   lifecycle {
     create_before_destroy = true
@@ -27,8 +31,9 @@ resource "aws_cognito_user_pool" "aws_cognito_create_pool" {
 }
 
 resource "aws_cognito_user_pool_client" "aws_cognito_create_app_client" {
-  name            = "soat-app-client"
-  user_pool_id    = aws_cognito_user_pool.aws_cognito_create_pool.id
+  count           = var.is_local ? 0 : 1
+  name            = "${var.project}-app-client"
+  user_pool_id    = aws_cognito_user_pool.aws_cognito_create_pool[0].id
   generate_secret = false
 
   explicit_auth_flows = [
@@ -37,15 +42,18 @@ resource "aws_cognito_user_pool_client" "aws_cognito_create_app_client" {
   ]
 }
 
+# ----------------------
+# SSM Parameters (stores real or mock values)
+# ----------------------
 resource "aws_ssm_parameter" "user_pool_id" {
   name  = "/cognito/user_pool_id"
   type  = "String"
-  value = aws_cognito_user_pool.aws_cognito_create_pool.id
+  value = var.is_local ? "local-user-pool-id-mock" : aws_cognito_user_pool.aws_cognito_create_pool[0].id
 }
 
 resource "aws_ssm_parameter" "app_client_id" {
   name  = "/cognito/app_client_id"
   type  = "String"
-  value = aws_cognito_user_pool_client.aws_cognito_create_app_client.id
+  value = var.is_local ? "local-app-client-id-mock" : aws_cognito_user_pool_client.aws_cognito_create_app_client[0].id
 }
 

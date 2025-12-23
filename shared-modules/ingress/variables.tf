@@ -20,8 +20,9 @@ variable "service_port" {
 }
 
 variable "host" {
-  description = "The host for the ingress rule"
+  description = "The host for the ingress rule (empty string = accept any host)"
   type        = string
+  default     = ""
 }
 
 variable "path" {

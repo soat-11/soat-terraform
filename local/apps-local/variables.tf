@@ -1,3 +1,8 @@
+variable "project" {
+  description = "Project name"
+  type        = string
+  default     = "soat-challenge"
+}
 
 variable "payment_image" {
   description = "Payment service image"
