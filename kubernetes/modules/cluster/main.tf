@@ -15,9 +15,5 @@ resource "aws_eks_cluster" "eks_cluster" {
 
     security_group_ids = var.security_group_ids
   }
-<<<<<<< HEAD:kubernetes/modules/cluster/main.tf
 }
 
-=======
-}
->>>>>>> b95176b590062352045630689a54a6cc75206f78:k8s/cluster/main.tf
