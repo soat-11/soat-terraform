@@ -20,6 +20,12 @@ variable "image" {
   type        = string
 }
 
+variable "image_pull_policy" {
+  description = "Image pull policy: Always, IfNotPresent, or Never"
+  type        = string
+  default     = "Never"
+}
+
 variable "container_port" {
   description = "Container port for the deployment"
   type        = number

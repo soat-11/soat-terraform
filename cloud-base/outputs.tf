@@ -26,6 +26,7 @@ output "repository_url" {
 output "cognito_user_pool_id" {
   description = "Cognito User Pool ID"
   value       = module.cognito.user_pool_id
+  sensitive   = true
 }
 
 output "cognito_user_pool_arn" {
@@ -36,6 +37,8 @@ output "cognito_user_pool_arn" {
 output "cognito_app_client_id" {
   description = "Cognito App Client ID"
   value       = module.cognito.app_client_id
+
+  sensitive = true
 }
 
 output "signup_lambda_arn" {
