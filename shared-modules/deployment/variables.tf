@@ -18,6 +18,7 @@ variable "replicas" {
 variable "image" {
   description = "Container image for the deployment"
   type        = string
+  default     = "PLACEHOLDER_IMAGE_URI" 
 }
 
 variable "image_pull_policy" {
@@ -48,7 +49,7 @@ variable "cpu_request" {
 variable "memory_request" {
   description = "Memory request for the container"
   type        = string
-  default     = "256Mi"
+  default     = "768Mi"
 }
 
 variable "cpu_limit" {
@@ -60,6 +61,6 @@ variable "cpu_limit" {
 variable "memory_limit" {
   description = "Memory limit for the container"
   type        = string
-  default     = "512Mi"
+  default     = "1280Mi"
 }
 
