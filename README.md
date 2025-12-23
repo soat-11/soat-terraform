@@ -164,34 +164,62 @@ terraform apply
 
 ## Local Testing
 
-You can test the infrastructure locally using **LocalStack** (AWS simulation) and **Kind** (Kubernetes simulation).
+Teste a infraestrutura localmente usando **LocalStack** (AWS) + **Kind** (Kubernetes).
 
-### Prerequisites for Local Testing
+### Arquitetura Local
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    local/apps-local/                             │
+│         Reutiliza módulos de apps/ (mesma config de prod)       │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │ module "payment" { source = "../../apps/payment" }          ││
+│  │ module "cart"    { source = "../../apps/cart" }             ││
+│  │ module "admin"   { source = "../../apps/admin" }            ││
+│  │                                                              ││
+│  │ Sobrescreve apenas:                                          ││
+│  │ - image: imagem local                                        ││
+│  │ - ingress_host: localhost                                    ││
+│  │ - cpu/memory: recursos menores                               ││
+│  │ - vars: endpoints locais (LocalStack, MongoDB, etc)          ││
+│  └─────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────┘
+          │                    │                    │
+          ▼                    ▼                    ▼
+    ┌──────────┐         ┌──────────┐        ┌──────────┐
+    │   Kind   │         │LocalStack│        │  Docker  │
+    │   K8s    │◄───────►│   AWS    │        │ MongoDB  │
+    │:80/:443  │         │  :4566   │        │ :27017   │
+    └──────────┘         └──────────┘        └──────────┘
+```
+
+### Pré-requisitos
 
 ```bash
 # macOS
 brew install docker terraform kubectl kind
 
 # Linux
-# Install Docker, Terraform, kubectl, and Kind from their official sources
+# Instale Docker, Terraform, kubectl e Kind
 ```
 
 ### Quick Start
 
-#### 1. Start Local Environment
+#### 1. Iniciar ambiente local
 
 ```bash
 cd local
 ./setup.sh
 ```
 
-This will:
-- Start **LocalStack** container (simulates AWS services on port 4566)
-- Create **Kind** cluster (local Kubernetes)
-- Install NGINX Ingress Controller
-- Create S3 bucket for Terraform state
+Isso irá:
+- Iniciar **LocalStack** (AWS na porta 4566)
+- Iniciar **MongoDB** e **PostgreSQL** (Docker)
+- Criar cluster **Kind** (Kubernetes local)
+- Instalar NGINX Ingress Controller
 
-#### 2. Test Cloud Base (AWS Services)
+#### 2. Aplicar infraestrutura AWS (LocalStack)
 
 ```bash
 cd local/cloud-base-local
@@ -199,15 +227,7 @@ terraform init
 terraform apply -auto-approve
 ```
 
-This tests:
-- S3 Buckets
-- Lambda Functions
-- API Gateway
-- Cognito User Pool
-- ECR Repository
-- SSM Parameters
-
-#### 3. Test Apps (Kubernetes)
+#### 3. Aplicar microserviços (Kind)
 
 ```bash
 cd local/apps-local
@@ -215,144 +235,145 @@ terraform init
 terraform apply -auto-approve
 ```
 
-This deploys to the Kind cluster:
-- Payment, Cart, Admin deployments
-- Services and Ingress
-- Secrets
+O `apps-local` **reutiliza os mesmos módulos de produção** (`apps/payment`, `apps/cart`, `apps/admin`), apenas sobrescrevendo variáveis para o ambiente local.
 
-#### Loading Custom Images to Kind
+### Usando imagens customizadas
 
-To use your own container images instead of the default `nginx:alpine`:
-
-**Build your images locally:**
+#### Build da imagem (arquitetura correta para Mac M1/M2)
 
 ```bash
-docker build -t payment:latest ./path/to/payment-service
-docker build -t cart:latest ./path/to/cart-service
-docker build -t admin:latest ./path/to/admin-service
+# IMPORTANTE: Se você usa Mac com Apple Silicon, build para a arquitetura correta
+docker build --platform linux/arm64 -t soat-payment:latest ./path/to/payment
+docker build --platform linux/arm64 -t soat-cart:latest ./path/to/cart
+docker build --platform linux/arm64 -t soat-admin:latest ./path/to/admin
 ```
 
-**Load images into Kind:**
+#### Carregar imagens no Kind
 
 ```bash
-kind load docker-image payment:latest --name soat-local
-kind load docker-image cart:latest --name soat-local
-kind load docker-image admin:latest --name soat-local
+kind load docker-image soat-payment:latest --name soat-local
+kind load docker-image soat-cart:latest --name soat-local
+kind load docker-image soat-admin:latest --name soat-local
 ```
 
-**Update variables in `local/apps-local/variables.tf`:**
+#### Verificar se carregou
 
-```hcl
-variable "payment_image" {
-  default = "payment:latest"
-}
-
-variable "cart_image" {
-  default = "cart:latest"
-}
-
-variable "admin_image" {
-  default = "admin:latest"
-}
+```bash
+docker exec soat-local-worker crictl images | grep soat
 ```
 
-**Apply Terraform:**
+#### Aplicar
 
 ```bash
 cd local/apps-local
 terraform apply -auto-approve
 ```
 
-**Quick test with nginx (if you don't have images ready):**
+### Sobrescrever variáveis locais
 
-```bash
-# Create simple test images
-echo 'FROM nginx:alpine' | docker build -t payment:latest -
-echo 'FROM nginx:alpine' | docker build -t cart:latest -
-echo 'FROM nginx:alpine' | docker build -t admin:latest -
+Crie `local/apps-local/terraform.tfvars`:
 
-# Load into Kind
-kind load docker-image payment:latest --name soat-local
-kind load docker-image cart:latest --name soat-local
-kind load docker-image admin:latest --name soat-local
+```hcl
+# Imagens
+payment_image = "soat-payment:latest"
+cart_image    = "soat-cart:latest"
+admin_image   = "soat-admin:latest"
+
+# Mercado Pago (opcional)
+mercado_pago_pos_id               = "seu-pos-id"
+mercado_pago_payment_access_token = "seu-token"
+mercado_pago_webhook_secret_key   = "seu-webhook-secret"
 ```
 
-#### 4. Verify Resources
+### Verificar recursos
 
 ```bash
-# Check LocalStack (AWS)
-aws --endpoint-url=http://localhost:4566 s3 ls
-aws --endpoint-url=http://localhost:4566 lambda list-functions
-aws --endpoint-url=http://localhost:4566 cognito-idp list-user-pools --max-results 10
-
-# Check Kind (Kubernetes)
+# Kubernetes
 kubectl get pods
 kubectl get svc
 kubectl get ingress
+
+# SQS (LocalStack)
+aws --endpoint-url=http://localhost:4566 sqs list-queues
+
+# Logs de um pod
+kubectl logs -f deployment/payment-deployment
 ```
 
-#### 5. Test Endpoints
+### Testar endpoints
 
 ```bash
-# Kubernetes services (via Ingress)
-curl http://localhost/payment/
-curl http://localhost/cart/
-curl http://localhost/admin/
+# Via Ingress
+curl http://localhost/payment/health
+curl http://localhost/cart/health
+curl http://localhost/admin/health
 
-# API Gateway (LocalStack)
-curl http://localhost:4566/restapis
+# Acessar um pod diretamente
+kubectl port-forward deployment/payment-deployment 3010:3010
+curl http://localhost:3010/health
 ```
 
-#### 6. Add Local Database (Optional)
-
-If you need a PostgreSQL database for testing:
+### Debuggar problemas
 
 ```bash
-docker run -d \
-  --name postgres-local \
-  -e POSTGRES_USER=admin \
-  -e POSTGRES_PASSWORD=localpassword \
-  -e POSTGRES_DB=soat_db \
-  -p 5432:5432 \
-  postgres:15-alpine
+# Ver eventos do pod
+kubectl describe pod -l app=payment
+
+# Verificar conectividade com MongoDB
+kubectl exec -it deployment/payment-deployment -- nc -zv host.docker.internal 27017
+
+# Verificar conectividade com LocalStack
+kubectl exec -it deployment/payment-deployment -- nc -zv host.docker.internal 4566
+
+# Ver logs
+kubectl logs -f deployment/payment-deployment
 ```
 
-#### 7. Cleanup
+### Cleanup
 
 ```bash
 cd local
 ./teardown.sh
 ```
 
-Or manually:
+Ou manualmente:
 
 ```bash
-# Destroy Terraform resources
+# Destruir Terraform
 cd local/apps-local && terraform destroy -auto-approve
 cd ../cloud-base-local && terraform destroy -auto-approve
 
-# Stop containers
+# Parar containers
 cd .. && docker-compose down -v
 
-# Delete Kind cluster
+# Deletar cluster Kind
 kind delete cluster --name soat-local
-
-# Stop PostgreSQL (if running)
-docker stop postgres-local && docker rm postgres-local
 ```
 
-### LocalStack Limitations
+### Limitações do LocalStack Free
 
-| Service | Free Version | Alternative |
-|---------|--------------|-------------|
-| VPC | Not supported | Not needed locally |
-| EKS | Pro only ($) | Kind/Minikube |
-| RDS | Pro only ($) | PostgreSQL Docker |
-| S3 | Works | - |
-| Lambda | Works | - |
-| API Gateway | Works | - |
-| ECR | Works | - |
-| Cognito | Partial | - |
+| Serviço | Free | Pro | Alternativa Local |
+|---------|------|-----|-------------------|
+| S3 | ✅ | ✅ | - |
+| SQS | ✅ | ✅ | - |
+| Lambda | ✅ | ✅ | - |
+| API Gateway | ✅ | ✅ | - |
+| ECR | ❌ | ✅ | `kind load docker-image` |
+| Cognito | ❌ | ✅ | Mock ou skip |
+| EKS | ❌ | ✅ | Kind |
+| RDS | ❌ | ✅ | Docker PostgreSQL |
+
+### Diferenças Local vs Produção
+
+| Aspecto | Produção | Local |
+|---------|----------|-------|
+| Kubernetes | EKS | Kind |
+| AWS | Real | LocalStack |
+| Database | RDS/DocumentDB | Docker |
+| Images | ECR | kind load |
+| Ingress Host | NLB hostname | localhost |
+| Resources | 100m-250m CPU | 50m-100m CPU |
+| Replicas | 1-2 (HPA) | 1 fixo |
 
 ---
 

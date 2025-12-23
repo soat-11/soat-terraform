@@ -5,9 +5,6 @@ provider "aws" {
   profile = "soat"
 }
 
-# ----------------------
-# Remote State - Cloud Base
-# ----------------------
 data "terraform_remote_state" "cloud_base" {
   backend = "s3"
   config = {
@@ -18,9 +15,6 @@ data "terraform_remote_state" "cloud_base" {
   }
 }
 
-# ----------------------
-# Remote State - Kubernetes
-# ----------------------
 data "terraform_remote_state" "kubernetes" {
   backend = "s3"
   config = {
@@ -31,9 +25,6 @@ data "terraform_remote_state" "kubernetes" {
   }
 }
 
-# ----------------------
-# Kubernetes & Helm Providers
-# ----------------------
 data "aws_eks_cluster" "eks" {
   name = data.terraform_remote_state.kubernetes.outputs.cluster_name
 }
@@ -56,9 +47,6 @@ provider "helm" {
   }
 }
 
-# ----------------------
-# Ingress Controller (shared)
-# ----------------------
 resource "helm_release" "ingress_nginx" {
   name             = "ingress-nginx"
   repository       = "https://kubernetes.github.io/ingress-nginx"
@@ -77,28 +65,24 @@ data "kubernetes_service" "nginx_lb" {
   depends_on = [helm_release.ingress_nginx]
 }
 
-# ----------------------
-# Microservices
-# ----------------------
+module "payment_sqs" {
+  source = "./payment/sqs"
+
+}
+
 module "payment" {
   source = "./payment"
 
-  app_name       = "payment"
-  image          = var.payment_image != "" ? var.payment_image : data.terraform_remote_state.cloud_base.outputs.repository_url
-  ingress_host   = data.kubernetes_service.nginx_lb.status[0].load_balancer[0].ingress[0].hostname
-  
-  db_name     = var.db_name
-  db_user     = var.db_user
-  db_password = var.db_password
-  db_host     = var.db_host
-  db_port     = var.db_port
-  app_port    = var.app_port
+  app_name     = "payment"
+  image        = var.payment_image != "" ? var.payment_image : data.terraform_remote_state.cloud_base.outputs.repository_url
+  ingress_host = data.kubernetes_service.nginx_lb.status[0].load_balancer[0].ingress[0].hostname
 
-  payment_access_token         = var.payment_access_token
-  payment_api_url              = var.payment_api_url
-  payment_user_id              = var.payment_user_id
-  payment_pos_id               = var.payment_pos_id
-  webhook_secret_signature_key = var.webhook_secret_signature_key
+  vars = merge(var.payment_vars, {
+    AWS_SQS_CREATE_PAYMENT_QUEUE_URL               = module.payment_sqs.create-payment-queue_url
+    AWS_SQS_PAYMENT_PAID_QUEUE_URL                 = module.payment_sqs.payment-paid-queue_url
+    AWS_SQS_MERCADO_PAGO_PROCESS_PAYMENT_QUEUE_URL = module.payment_sqs.mercado-pago-process-payment-queue_url
+    AWS_SQS_CANCEL_PAYMENT_QUEUE_URL               = module.payment_sqs.cancel-payment-queue_url
+  })
 
   depends_on = [helm_release.ingress_nginx]
 }
@@ -110,36 +94,16 @@ module "cart" {
   image        = var.cart_image != "" ? var.cart_image : data.terraform_remote_state.cloud_base.outputs.repository_url
   ingress_host = data.kubernetes_service.nginx_lb.status[0].load_balancer[0].ingress[0].hostname
 
-  db_name     = var.db_name
-  db_user     = var.db_user
-  db_password = var.db_password
-  db_host     = var.db_host
-  db_port     = var.db_port
-  app_port    = var.app_port
+  db_name     = "var.db_name"
+  db_user     = "var.cart_vars.DB_USER"
+  db_password = "var.cart_vars.DB_PASSWORD"
+  db_host     = "var.cart_vars.DB_HOST"
+  db_port     = "var.cart_vars.DB_PORT"
+  app_port    = "var.cart_vars.PORT"
 
   depends_on = [helm_release.ingress_nginx]
 }
 
-module "admin" {
-  source = "./admin"
-
-  app_name     = "admin"
-  image        = var.admin_image != "" ? var.admin_image : data.terraform_remote_state.cloud_base.outputs.repository_url
-  ingress_host = data.kubernetes_service.nginx_lb.status[0].load_balancer[0].ingress[0].hostname
-
-  db_name     = var.db_name
-  db_user     = var.db_user
-  db_password = var.db_password
-  db_host     = var.db_host
-  db_port     = var.db_port
-  app_port    = var.app_port
-
-  depends_on = [helm_release.ingress_nginx]
-}
-
-# ----------------------
-# API Gateway
-# ----------------------
 module "api_gateway" {
   source = "./modules/api-gateway"
 

@@ -4,6 +4,7 @@ resource "kubernetes_ingress_v1" "ingress" {
     namespace = var.namespace
     annotations = {
       "nginx.ingress.kubernetes.io/rewrite-target" = var.rewrite_target
+      "nginx.ingress.kubernetes.io/use-regex"      = "true"
     }
   }
 

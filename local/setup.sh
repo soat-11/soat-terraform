@@ -42,15 +42,31 @@ docker-compose up -d
 
 echo ""
 echo "Waiting for LocalStack to be ready..."
-sleep 10
+sleep 5
 
-# Check if LocalStack is ready
-until curl -s http://localhost:4566/_localstack/health | grep -q '"s3": "available"'; do
-    echo "Waiting for LocalStack..."
+# Check if LocalStack is ready (compatível com v3+)
+MAX_RETRIES=30
+RETRY_COUNT=0
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    if curl -s http://localhost:4566/_localstack/health > /dev/null 2>&1; then
+        echo -e "${GREEN}✅ LocalStack is ready!${NC}"
+        break
+    fi
+    
+    # Fallback: verificar se a porta está respondendo
+    if curl -s http://localhost:4566 > /dev/null 2>&1; then
+        echo -e "${GREEN}✅ LocalStack is ready!${NC}"
+        break
+    fi
+    
+    RETRY_COUNT=$((RETRY_COUNT + 1))
+    echo "Waiting for LocalStack... ($RETRY_COUNT/$MAX_RETRIES)"
     sleep 2
 done
 
-echo -e "${GREEN}✅ LocalStack is ready!${NC}"
+if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+    echo -e "${YELLOW}⚠️  LocalStack health check timeout, but continuing...${NC}"
+fi
 
 echo ""
 echo "============================================"
@@ -97,17 +113,24 @@ echo "============================================"
 echo -e "${GREEN}  Setup Complete!${NC}"
 echo "============================================"
 echo ""
-echo "LocalStack: http://localhost:4566"
-echo "AWS CLI:    aws --endpoint-url=http://localhost:4566 <command>"
+echo "Services:"
+echo "  LocalStack:  http://localhost:4566"
+echo "  MongoDB:     mongodb://localhost:27017"
+echo "  PostgreSQL:  postgresql://admin:localpassword@localhost:5432/soat_db"
+echo ""
+echo "AWS CLI:"
+echo "  aws --endpoint-url=http://localhost:4566 sqs list-queues"
+echo "  aws --endpoint-url=http://localhost:4566 s3 ls"
 echo ""
 if command -v kind &> /dev/null; then
-    echo "Kubernetes: kubectl cluster-info --context kind-soat-local"
+    echo "Kubernetes:"
+    echo "  kubectl cluster-info --context kind-soat-local"
+    echo "  kubectl get pods"
     echo ""
 fi
 echo "Next steps:"
-echo "  1. cd cloud-base"
-echo "  2. Copy ../local/provider-local.tf to provider.tf"
-echo "  3. Copy ../local/backend-local.tf to backend.tf"
-echo "  4. terraform init && terraform apply"
+echo "  1. cd apps-local"
+echo "  2. terraform init"
+echo "  3. terraform apply"
 echo ""
 

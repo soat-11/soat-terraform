@@ -14,81 +14,6 @@ variable "ingress_host" {
   type        = string
 }
 
-# Database
-variable "db_name" {
-  description = "Database name"
-  type        = string
-}
-
-variable "db_user" {
-  description = "Database user"
-  type        = string
-}
-
-variable "db_password" {
-  description = "Database password"
-  type        = string
-  sensitive   = true
-}
-
-variable "db_host" {
-  description = "Database host"
-  type        = string
-}
-
-variable "db_port" {
-  description = "Database port"
-  type        = number
-  default     = 5432
-}
-
-variable "app_port" {
-  description = "Application port"
-  type        = number
-  default     = 3010
-}
-
-variable "app_base_url" {
-  description = "Application base URL"
-  type        = string
-  default     = "/"
-}
-
-# Payment specific
-variable "payment_access_token" {
-  description = "Payment access token"
-  type        = string
-  sensitive   = true
-}
-
-variable "payment_api_url" {
-  description = "Payment API URL"
-  type        = string
-}
-
-variable "payment_user_id" {
-  description = "Payment user ID"
-  type        = number
-}
-
-variable "payment_pos_id" {
-  description = "Payment POS ID"
-  type        = string
-}
-
-variable "webhook_secret_signature_key" {
-  description = "Webhook secret signature key"
-  type        = string
-  sensitive   = true
-}
-
-variable "webhook_api_url" {
-  description = "Webhook API URL"
-  type        = string
-  default     = "/"
-}
-
-# Resources - optimized for lightweight apps
 variable "cpu_request" {
   description = "CPU request"
   type        = string
@@ -125,4 +50,30 @@ variable "max_replicas" {
   type        = number
   default     = 2
 }
+
+//envs
+
+variable "vars" {
+  description = "Variables"
+  type = object({
+    AWS_REGION                                     = string,
+    AWS_ENDPOINT                                   = string,
+    AWS_ACCESS_KEY_ID                              = string,
+    AWS_SECRET_ACCESS_KEY                          = string,
+    AWS_SQS_CREATE_PAYMENT_QUEUE_URL               = string,
+    AWS_SQS_PAYMENT_PAID_QUEUE_URL                 = string,
+    AWS_SQS_MERCADO_PAGO_PROCESS_PAYMENT_QUEUE_URL = string,
+    AWS_SQS_CANCEL_PAYMENT_QUEUE_URL               = string,
+    MERCADO_PAGO_POS_ID                            = string,
+    MERCADO_PAGO_API_URL                           = string,
+    MERCADO_PAGO_PAYMENT_ACCESS_TOKEN              = string,
+    MERCADO_PAGO_WEBHOOK_SECRET_KEY                = string,
+    NODE_ENV                                       = string,
+    PORT                                           = string,
+    MONGODB_URI                                    = string,
+    DB_HOST                                        = string,
+  })
+  sensitive = true
+}
+
 
