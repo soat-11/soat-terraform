@@ -1,8 +1,18 @@
 data "aws_caller_identity" "current" {}
 
 provider "aws" {
-  region  = var.region
-  profile = "soat"
+  region = var.region
+}
+
+# -----------------------------------------------------------------------------
+# IAM Role Configuration
+# -----------------------------------------------------------------------------
+# var.create_iam_roles = false (default) -> usa LabRole
+# var.create_iam_roles = true            -> cria roles próprios
+locals {
+  lab_role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole"
+  # Se create_iam_roles = false, passa LabRole. Se true, passa "" para criar novo.
+  eks_role_arn = var.create_iam_roles ? "" : local.lab_role_arn
 }
 
 # ----------------------
@@ -11,10 +21,9 @@ provider "aws" {
 data "terraform_remote_state" "cloud_base" {
   backend = "s3"
   config = {
-    bucket  = "soat-terraform-challenge"
-    key     = "cloud-base/terraform.tfstate"
-    region  = "us-east-1"
-    profile = "default"
+    bucket = var.backend_bucket
+    key    = "cloud-base/terraform.tfstate"
+    region = "us-east-1"
   }
 }
 
@@ -27,7 +36,7 @@ module "eks_cluster" {
   vpc_id             = data.terraform_remote_state.cloud_base.outputs.vpc_id
   subnet_ids         = data.terraform_remote_state.cloud_base.outputs.subnet_ids
   project_name       = var.project
-  eks_role_arn       = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole"
+  eks_role_arn       = local.eks_role_arn
   security_group_ids = data.terraform_remote_state.cloud_base.outputs.security_group_ids
 }
 
@@ -40,16 +49,26 @@ module "eks_node_group" {
 
   cluster_name = module.eks_cluster.cluster_name
   project      = var.project
-  eks_role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole"
+  eks_role_arn = local.eks_role_arn
   subnet_ids   = data.terraform_remote_state.cloud_base.outputs.subnet_ids
 }
 
 # ----------------------
 # EKS Access Entry
 # ----------------------
+# Obtém a identidade atual (usuário ou role que está executando o Terraform)
+data "aws_iam_session_context" "current" {
+  arn = data.aws_caller_identity.current.arn
+}
+
+locals {
+  # Para AWS Academy usa voclabs, para conta própria usa o caller atual
+  access_principal_arn = var.create_iam_roles ? data.aws_iam_session_context.current.issuer_arn : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/voclabs"
+}
+
 resource "aws_eks_access_entry" "access_entry" {
   cluster_name      = module.eks_cluster.cluster_name
-  principal_arn     = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/voclabs"
+  principal_arn     = local.access_principal_arn
   kubernetes_groups = ["group-soat"]
   type              = "STANDARD"
 
@@ -59,7 +78,7 @@ resource "aws_eks_access_entry" "access_entry" {
 resource "aws_eks_access_policy_association" "eks_access_policy" {
   cluster_name  = module.eks_cluster.cluster_name
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-  principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/voclabs"
+  principal_arn = local.access_principal_arn
 
   access_scope {
     type = "cluster"
@@ -88,7 +107,7 @@ provider "kubernetes" {
 }
 
 provider "helm" {
-  kubernetes {
+  kubernetes = {
     host                   = data.aws_eks_cluster.eks.endpoint
     cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks.certificate_authority[0].data)
     token                  = data.aws_eks_cluster_auth.eks.token

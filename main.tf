@@ -2,7 +2,6 @@ data "aws_caller_identity" "current" {}
 
 module "provider" {
   source = "./provider"
-  region = var.region
 }
 
 module "container_registry" {
@@ -167,11 +166,8 @@ module "deployment-hpa" {
 module "service" {
   source = "./k8s/service"
 
-  app_name        = var.project
-  deployment_name = module.deployment.deployment_name
-  service_port    = 5005
-  container_port  = module.deployment.deployment_port
-  depends_on      = [module.deployment]
+
+  depends_on = [module.deployment]
 }
 
 module "ingress" {
@@ -197,8 +193,8 @@ module "cognito" {
   source = "./cognito"
 }
 module "lambda" {
-  source = "./lambda"
-  project = var.project
+  source   = "./lambda"
+  project  = var.project
   role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole"
 }
 
@@ -214,7 +210,7 @@ module "api_gateway" {
   cognito_user_pool_arn = module.cognito.user_pool_arn
   eks_nlb_hostname      = module.ingress.url
 
-  depends_on = [ module.ingress ]
+  depends_on = [module.ingress]
 }
 
 output "url_api_gateway" {

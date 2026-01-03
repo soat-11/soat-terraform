@@ -54,3 +54,9 @@ variable "payment_vars" {
   sensitive = true
 
 }
+
+variable "backend_bucket" {
+  description = "The name of the backend bucket"
+  type        = string
+  default     = "arao-soat-terraform-challenge"
+}

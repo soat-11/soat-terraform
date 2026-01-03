@@ -9,8 +9,9 @@ variable "cluster_name" {
 }
 
 variable "eks_role_arn" {
-  description = "EKS Role ARN"
+  description = "ARN do IAM role para o Node Group (se vazio, cria um novo)"
   type        = string
+  default     = ""
 }
 
 variable "subnet_ids" {
@@ -41,4 +42,3 @@ variable "max_size" {
   type        = number
   default     = 2
 }
-

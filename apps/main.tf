@@ -1,27 +1,27 @@
 data "aws_caller_identity" "current" {}
 
 provider "aws" {
-  region  = var.region
-  profile = "soat"
+  region = var.region
+
 }
 
 data "terraform_remote_state" "cloud_base" {
   backend = "s3"
   config = {
-    bucket  = "soat-terraform-challenge"
-    key     = "cloud-base/terraform.tfstate"
-    region  = "us-east-1"
-    profile = "default"
+    bucket = var.backend_bucket
+    key    = "cloud-base/terraform.tfstate"
+    region = "us-east-1"
+
   }
 }
 
 data "terraform_remote_state" "kubernetes" {
   backend = "s3"
   config = {
-    bucket  = "soat-terraform-challenge"
-    key     = "kubernetes/terraform.tfstate"
-    region  = "us-east-1"
-    profile = "default"
+    bucket = var.backend_bucket
+    key    = "kubernetes/terraform.tfstate"
+    region = "us-east-1"
+
   }
 }
 
@@ -40,7 +40,7 @@ provider "kubernetes" {
 }
 
 provider "helm" {
-  kubernetes {
+  kubernetes = {
     host                   = data.aws_eks_cluster.eks.endpoint
     cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks.certificate_authority[0].data)
     token                  = data.aws_eks_cluster_auth.eks.token

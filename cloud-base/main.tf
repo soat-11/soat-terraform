@@ -1,8 +1,17 @@
 data "aws_caller_identity" "current" {}
 
 provider "aws" {
-  region  = var.region
-  profile = "soat"
+  region = var.region
+}
+
+# -----------------------------------------------------------------------------
+# IAM Role Configuration
+# -----------------------------------------------------------------------------
+# var.create_iam_roles = false (default) -> usa LabRole
+# var.create_iam_roles = true            -> cria roles próprios
+locals {
+  lab_role_arn    = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole"
+  lambda_role_arn = var.create_iam_roles ? "" : local.lab_role_arn
 }
 
 # ----------------------
@@ -81,6 +90,6 @@ module "cognito" {
 module "lambda" {
   source   = "./modules/lambda"
   project  = var.project
-  role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole"
+  role_arn = local.lambda_role_arn
 }
 

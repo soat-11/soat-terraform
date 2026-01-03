@@ -12,10 +12,5 @@ output "cluster_ca" {
 
 output "eks_service_role_arn" {
   value = aws_eks_cluster.eks_cluster.role_arn
-<<<<<<< HEAD:kubernetes/modules/cluster/outputs.tf
-}
-
-=======
 
 }
->>>>>>> b95176b590062352045630689a54a6cc75206f78:k8s/cluster/outputs.tf

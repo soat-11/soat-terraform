@@ -14,12 +14,12 @@ variable "subnet_ids" {
 }
 
 variable "eks_role_arn" {
-  description = "The ARN of the IAM role for the EKS cluster"
+  description = "ARN do IAM role para o EKS cluster (se vazio, cria um novo)"
   type        = string
+  default     = ""
 }
 
 variable "security_group_ids" {
   description = "List of security group IDs for the EKS cluster"
   type        = list(string)
 }
-
