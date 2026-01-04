@@ -52,8 +52,9 @@ variable "allowed_cidrs" {
 }
 
 variable "allowed_security_groups" {
-  description = "Lista de IDs de Security Groups permitidos para acessar o banco (ex: VPC Security Group)"
+  description = "Lista de IDs de Security Groups permitidos para acessar o banco (ex: EKS Node Security Group)"
   type        = list(string)
+  default     = []
 }
 
 variable "user_data_script" {
