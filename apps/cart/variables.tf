@@ -92,3 +92,9 @@ variable "max_replicas" {
   default     = 2
 }
 
+
+variable "image_pull_policy" {
+  description = "Image pull policy: Always, IfNotPresent, or Never"
+  type        = string
+  default     = "IfNotPresent"
+}

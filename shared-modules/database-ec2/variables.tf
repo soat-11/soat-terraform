@@ -51,6 +51,11 @@ variable "allowed_cidrs" {
   type        = list(string)
 }
 
+variable "allowed_security_groups" {
+  description = "Lista de IDs de Security Groups permitidos para acessar o banco (ex: VPC Security Group)"
+  type        = list(string)
+}
+
 variable "user_data_script" {
   description = "Conteúdo do script de inicialização (deve incluir lógica de montagem do EBS)"
   type        = string

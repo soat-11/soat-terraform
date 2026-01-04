@@ -38,7 +38,8 @@ module "mongo_db" {
   db_port          = 27017
 
   # Segurança: aceita conexões apenas da VPC
-  allowed_cidrs = [data.terraform_remote_state.cloud_base.outputs.vpc_cidr_block]
+  allowed_cidrs           = [data.terraform_remote_state.cloud_base.outputs.vpc_cidr_block]
+  allowed_security_groups = [data.terraform_remote_state.cloud_base.outputs.database_security_group_id]
 
   user_data_script = templatefile("${path.module}/scripts/mongo-setup.sh", {
     mongo_user     = var.db_user

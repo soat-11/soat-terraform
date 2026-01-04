@@ -35,22 +35,24 @@ resource "aws_security_group" "database" {
 
   # Ingress: Permite acesso à porta do banco apenas dos CIDRs permitidos
   ingress {
-    description = "Database port access"
-    from_port   = var.db_port
-    to_port     = var.db_port
-    protocol    = "tcp"
-    cidr_blocks = var.allowed_cidrs
+    description     = "Database port access"
+    from_port       = var.db_port
+    to_port         = var.db_port
+    protocol        = "tcp"
+    cidr_blocks     = var.allowed_cidrs
+    security_groups = var.allowed_security_groups
   }
 
 
   dynamic "ingress" {
     for_each = var.key_name != null ? [1] : []
     content {
-      description = "SSH access"
-      from_port   = 22
-      to_port     = 22
-      protocol    = "tcp"
-      cidr_blocks = var.allowed_cidrs
+      description     = "SSH access"
+      from_port       = 22
+      to_port         = 22
+      protocol        = "tcp"
+      cidr_blocks     = var.allowed_cidrs
+      security_groups = var.allowed_security_groups
     }
   }
 
