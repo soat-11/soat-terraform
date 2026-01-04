@@ -9,5 +9,9 @@ output "service_port" {
 }
 
 output "nlb_hostname" {
-  value = kubernetes_service.soat_api_service.status[0].load_balancer[0].ingress[0].hostname
+  description = "The hostname of the NLB (only available for LoadBalancer type)"
+  value = try(
+    kubernetes_service.service.status[0].load_balancer[0].ingress[0].hostname,
+    null
+  )
 }

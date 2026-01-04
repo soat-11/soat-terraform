@@ -9,10 +9,11 @@ module "secrets" {
 module "deployment" {
   source = "../../shared-modules/deployment"
 
-  app_name       = var.app_name
-  image          = var.image
-  secret_name    = module.secrets.secret_name
-  container_port = var.vars.PORT
+  app_name          = var.app_name
+  image             = var.image
+  image_pull_policy = var.image_pull_policy
+  secret_name       = module.secrets.secret_name
+  container_port    = var.vars.PORT
 
   cpu_request    = var.cpu_request
   memory_request = var.memory_request

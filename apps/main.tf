@@ -85,11 +85,17 @@ module "payment_sqs" {
 
 }
 
+module "payment_ecr" {
+  source = "../cloud-base/modules/container-registry"
+
+  repository_name = "payment"
+}
+
 module "payment" {
   source = "./payment"
 
   app_name     = "payment"
-  image        = var.payment_image != "" ? var.payment_image : data.terraform_remote_state.cloud_base.outputs.repository_url
+  image        = var.payment_image != "" ? var.payment_image : "${module.payment_ecr.repository_url}:latest"
   ingress_host = data.kubernetes_service.nginx_lb.status[0].load_balancer[0].ingress[0].hostname
   vars = merge(var.payment_vars, {
     AWS_SQS_CREATE_PAYMENT_QUEUE_URL               = module.payment_sqs.create-payment-queue_url

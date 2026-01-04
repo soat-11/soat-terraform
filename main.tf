@@ -4,10 +4,6 @@ module "provider" {
   source = "./provider"
 }
 
-module "container_registry" {
-  source          = "./container-registry"
-  repository_name = "${var.project}-repository"
-}
 
 module "vpc" {
   source = "./vpc"

@@ -89,10 +89,11 @@ module "cancel-payment-queue" {
 module "payment" {
   source = "../../apps/payment"
 
-  app_name     = "payment"
-  image        = var.payment_image
-  ingress_host = local.local_config.ingress_host
-  vars         = local.payment_vars
+  app_name          = "payment"
+  image             = var.payment_image
+  image_pull_policy = "Never" # Local environment uses pre-loaded images
+  ingress_host      = local.local_config.ingress_host
+  vars              = local.payment_vars
 
   cpu_request    = "100m"
   memory_request = "256Mi"

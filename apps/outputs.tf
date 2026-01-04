@@ -3,15 +3,15 @@ output "payment_service_name" {
   value       = module.payment.service_name
 }
 
-output "cart_service_name" {
-  description = "Cart service name"
-  value       = module.cart.service_name
-}
+# output "cart_service_name" {
+#   description = "Cart service name"
+#   value       = module.cart.service_name
+# }
 
-output "admin_service_name" {
-  description = "Admin service name"
-  value       = module.admin.service_name
-}
+# output "admin_service_name" {
+#   description = "Admin service name"
+#   value       = module.admin.service_name
+# }
 
 output "ingress_url" {
   description = "Ingress URL"
@@ -21,5 +21,10 @@ output "ingress_url" {
 output "api_gateway_url" {
   description = "API Gateway URL"
   value       = module.api_gateway.rest_api_invoke_url
+}
+
+output "payment_repository_url" {
+  description = "Payment ECR repository URL"
+  value       = module.payment_ecr.repository_url
 }
 

@@ -24,7 +24,7 @@ variable "image" {
 variable "image_pull_policy" {
   description = "Image pull policy: Always, IfNotPresent, or Never"
   type        = string
-  default     = "Never"
+  default     = "IfNotPresent"
 }
 
 variable "container_port" {
