@@ -116,23 +116,23 @@ provider "helm" {
 }
 
 
-module "secrets" {
-  source = "./k8s/secrets"
+# module "payment-secrets" {
+#   source = "../../shared-modules/secrets"
 
-  db_name                      = var.db_name
-  db_user                      = var.db_user
-  db_password                  = var.db_password
-  db_port                      = var.db_port
-  db_host                      = var.db_host
-  app_port                     = var.app_port
-  app_base_url                 = "/"
-  payment_access_token         = var.payment_access_token
-  payment_api_url              = var.payment_api_url
-  payment_user_id              = var.payment_user_id
-  payment_pos_id               = var.payment_pos_id
-  webhook_secret_signature_key = var.webhook_secret_signature_key
-  webhook_api_url              = "/"
-}
+#   db_name                      = var.db_name
+#   db_user                      = var.db_user
+#   db_password                  = var.db_password
+#   db_port                      = var.db_port
+#   db_host                      = var.db_host
+#   app_port                     = var.app_port
+#   app_base_url                 = "/"
+#   payment_access_token         = var.payment_access_token
+#   payment_api_url              = var.payment_api_url
+#   payment_user_id              = var.payment_user_id
+#   payment_pos_id               = var.payment_pos_id
+#   webhook_secret_signature_key = var.webhook_secret_signature_key
+#   webhook_api_url              = "/"
+# }
 
 module "deployment" {
   source = "./k8s/deployment"

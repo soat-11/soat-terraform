@@ -1,25 +1,22 @@
 variable "project" {
   description = "The name of the project"
   type        = string
+  default     = "payment"
 }
 
-variable "database_subnet_id" {
-  description = "The ID of the database subnet"
+variable "backend_bucket" {
+  description = "Nome do bucket S3 para remote state"
   type        = string
+  default     = "arao-soat-terraform-challenge"
 }
 
 variable "db_user" {
-  description = "The user for the database"
+  description = "Usuário admin do MongoDB"
   type        = string
 }
 
 variable "db_password" {
-  description = "The password for the database"
+  description = "Senha do usuário admin do MongoDB"
   type        = string
   sensitive   = true
-}
-
-variable "vpc_id" {
-  description = "The ID of the VPC"
-  type        = string
 }

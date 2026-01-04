@@ -77,3 +77,9 @@ variable "vars" {
 }
 
 
+
+variable "backend_bucket" {
+  description = "Backend bucket"
+  type        = string
+  default     = "arao-soat-terraform-challenge"
+}

@@ -49,7 +49,11 @@ module "route_table" {
 
   vpc_id              = module.vpc.vpc_id
   internet_gateway_id = module.internet_gateway.internet_gateway_id
-  subnet_ids          = module.subnets.subnet_ids
+  # Inclui subnets de aplicação + subnet de database
+  subnet_ids = concat(
+    module.subnets.subnet_ids,
+    [module.subnets.database_subnet_id]
+  )
 }
 
 # ----------------------

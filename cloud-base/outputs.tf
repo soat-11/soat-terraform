@@ -9,8 +9,13 @@ output "vpc_cidr_block" {
 }
 
 output "subnet_ids" {
-  description = "List of subnet IDs"
+  description = "List of subnet IDs (application subnets)"
   value       = module.subnets.subnet_ids
+}
+
+output "database_subnet_id" {
+  description = "ID da subnet dedicada para bancos de dados"
+  value       = module.subnets.database_subnet_id
 }
 
 output "security_group_ids" {

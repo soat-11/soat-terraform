@@ -21,8 +21,23 @@ data "terraform_remote_state" "kubernetes" {
     bucket = var.backend_bucket
     key    = "kubernetes/terraform.tfstate"
     region = "us-east-1"
-
   }
+}
+
+# Remote state do banco de dados MongoDB
+data "terraform_remote_state" "payment_database" {
+  backend = "s3"
+  config = {
+    bucket = var.backend_bucket
+    key    = "apps/payment/database/terraform.tfstate"
+    region = "us-east-1"
+  }
+}
+
+# MongoDB URI construída automaticamente
+locals {
+  mongo_host = data.terraform_remote_state.payment_database.outputs.mongo_private_ip
+  mongo_uri  = "mongodb://${var.mongo_user}:${var.mongo_password}@${local.mongo_host}:27017/payment?authSource=admin"
 }
 
 data "aws_eks_cluster" "eks" {
@@ -76,33 +91,34 @@ module "payment" {
   app_name     = "payment"
   image        = var.payment_image != "" ? var.payment_image : data.terraform_remote_state.cloud_base.outputs.repository_url
   ingress_host = data.kubernetes_service.nginx_lb.status[0].load_balancer[0].ingress[0].hostname
-
   vars = merge(var.payment_vars, {
     AWS_SQS_CREATE_PAYMENT_QUEUE_URL               = module.payment_sqs.create-payment-queue_url
     AWS_SQS_PAYMENT_PAID_QUEUE_URL                 = module.payment_sqs.payment-paid-queue_url
     AWS_SQS_MERCADO_PAGO_PROCESS_PAYMENT_QUEUE_URL = module.payment_sqs.mercado-pago-process-payment-queue_url
     AWS_SQS_CANCEL_PAYMENT_QUEUE_URL               = module.payment_sqs.cancel-payment-queue_url
+    MONGODB_URI                                    = local.mongo_uri
+    DB_HOST                                        = local.mongo_host
   })
 
   depends_on = [helm_release.ingress_nginx]
 }
 
-module "cart" {
-  source = "./cart"
+# module "cart" {
+#   source = "./cart"
 
-  app_name     = "cart"
-  image        = var.cart_image != "" ? var.cart_image : data.terraform_remote_state.cloud_base.outputs.repository_url
-  ingress_host = data.kubernetes_service.nginx_lb.status[0].load_balancer[0].ingress[0].hostname
+#   app_name     = "cart"
+#   image        = var.cart_image != "" ? var.cart_image : data.terraform_remote_state.cloud_base.outputs.repository_url
+#   ingress_host = data.kubernetes_service.nginx_lb.status[0].load_balancer[0].ingress[0].hostname
 
-  db_name     = "var.db_name"
-  db_user     = "var.cart_vars.DB_USER"
-  db_password = "var.cart_vars.DB_PASSWORD"
-  db_host     = "var.cart_vars.DB_HOST"
-  db_port     = "var.cart_vars.DB_PORT"
-  app_port    = "var.cart_vars.PORT"
+#   db_name     = "var.db_name"
+#   db_user     = "var.cart_vars.DB_USER"
+#   db_password = "var.cart_vars.DB_PASSWORD"
+#   db_host     = "var.cart_vars.DB_HOST"
+#   db_port     = "var.cart_vars.DB_PORT"
+#   app_port    = "var.cart_vars.PORT"
 
-  depends_on = [helm_release.ingress_nginx]
-}
+#   depends_on = [helm_release.ingress_nginx]
+# }
 
 module "api_gateway" {
   source = "./modules/api-gateway"
