@@ -115,7 +115,7 @@ resource "aws_api_gateway_integration" "proxy_any" {
   request_parameters = {
     "integration.request.path.proxy"          = "method.request.path.proxy"
     "integration.request.header.Authorization" = "method.request.header.Authorization"
-    "integration.request.header.x-user-id"     = "context.authorizer.claims.sub"
+    "integration.request.header.x-session-id"     = "context.authorizer.claims.sub"
   }
 }
 
