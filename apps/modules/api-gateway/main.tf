@@ -1,14 +1,8 @@
-# ----------------------
-# API Gateway
-# ----------------------
 resource "aws_api_gateway_rest_api" "this" {
   name        = "${var.project}-api-gateway"
   description = var.is_local ? "API Gateway for local testing" : "API Gateway para autenticação e EKS"
 }
 
-# ----------------------
-# Lambda: Signup
-# ----------------------
 resource "aws_api_gateway_resource" "signup" {
   rest_api_id = aws_api_gateway_rest_api.this.id
   parent_id   = aws_api_gateway_rest_api.this.root_resource_id
@@ -40,9 +34,6 @@ resource "aws_lambda_permission" "allow_api_gateway_signup" {
   source_arn    = "${aws_api_gateway_rest_api.this.execution_arn}/*/*"
 }
 
-# ----------------------
-# Lambda: Login
-# ----------------------
 resource "aws_api_gateway_resource" "login" {
   rest_api_id = aws_api_gateway_rest_api.this.id
   parent_id   = aws_api_gateway_rest_api.this.root_resource_id
@@ -73,9 +64,6 @@ resource "aws_lambda_permission" "allow_api_gateway_login" {
   source_arn    = "${aws_api_gateway_rest_api.this.execution_arn}/*/*"
 }
 
-# ----------------------
-# Proxy para EKS/K8s - Payment
-# ----------------------
 resource "aws_api_gateway_resource" "payment" {
   rest_api_id = aws_api_gateway_rest_api.this.id
   parent_id   = aws_api_gateway_rest_api.this.root_resource_id
@@ -128,9 +116,7 @@ resource "aws_api_gateway_integration" "payment_any" {
   }
 }
 
-# ----------------------
-# Proxy genérico para outros serviços K8s
-# ----------------------
+# Proxy genérico para outros serviços K8s (cart, etc)
 resource "aws_api_gateway_resource" "proxy" {
   rest_api_id = aws_api_gateway_rest_api.this.id
   parent_id   = aws_api_gateway_rest_api.this.root_resource_id
@@ -164,9 +150,6 @@ resource "aws_api_gateway_integration" "proxy_any" {
   }
 }
 
-# ----------------------
-# Deployment + Stage
-# ----------------------
 resource "aws_api_gateway_deployment" "deploy" {
   rest_api_id = aws_api_gateway_rest_api.this.id
 
@@ -209,9 +192,6 @@ resource "aws_api_gateway_stage" "stage_eks" {
   stage_name    = "prod"
 }
 
-# ----------------------
-# Method settings (opcional)
-# ----------------------
 resource "aws_api_gateway_method_settings" "settings-eks" {
   rest_api_id = aws_api_gateway_rest_api.this.id
   stage_name  = aws_api_gateway_stage.stage_eks.stage_name
@@ -221,4 +201,3 @@ resource "aws_api_gateway_method_settings" "settings-eks" {
     metrics_enabled = var.is_local ? false : false
   }
 }
-

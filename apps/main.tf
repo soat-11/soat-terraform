@@ -2,7 +2,6 @@ data "aws_caller_identity" "current" {}
 
 provider "aws" {
   region = var.region
-
 }
 
 data "terraform_remote_state" "cloud_base" {
@@ -11,7 +10,6 @@ data "terraform_remote_state" "cloud_base" {
     bucket = var.backend_bucket
     key    = "cloud-base/terraform.tfstate"
     region = "us-east-1"
-
   }
 }
 
@@ -24,7 +22,6 @@ data "terraform_remote_state" "kubernetes" {
   }
 }
 
-# Remote state do banco de dados MongoDB
 data "terraform_remote_state" "payment_database" {
   backend = "s3"
   config = {
@@ -43,18 +40,18 @@ data "terraform_remote_state" "cart_database" {
   }
 }
 
-# MongoDB URI construída automaticamente
 locals {
-  mongo_host = data.terraform_remote_state.payment_database.outputs.mongo_private_ip
-  mongo_uri  = "mongodb://${var.mongo_user}:${var.mongo_password}@${local.mongo_host}:27017/payment?authSource=admin"
+  payment_db_host     = data.terraform_remote_state.payment_database.outputs.private_ip
+  payment_db_uri      = data.terraform_remote_state.payment_database.outputs.mongo_db_uri
+  payment_db_name     = data.terraform_remote_state.payment_database.outputs.mongo_db_name
+  payment_db_user     = data.terraform_remote_state.payment_database.outputs.mongo_db_user
+  payment_db_password = data.terraform_remote_state.payment_database.outputs.mongo_db_password
 
-  mongo_host_cart        = data.terraform_remote_state.cart_database.outputs.private_ip
-  mongo_db_name_cart     = data.terraform_remote_state.cart_database.outputs.mongo_db_name
-  mongo_db_user_cart     = data.terraform_remote_state.cart_database.outputs.mongo_db_user
-  mongo_db_password_cart = data.terraform_remote_state.cart_database.outputs.mongo_db_password
-  mongo_db_host_cart     = data.terraform_remote_state.cart_database.outputs.private_ip
-  mongo_db_port_cart     = 27017
-
+  cart_db_host     = data.terraform_remote_state.cart_database.outputs.private_ip
+  cart_db_uri      = data.terraform_remote_state.cart_database.outputs.mongo_db_uri
+  cart_db_name     = data.terraform_remote_state.cart_database.outputs.mongo_db_name
+  cart_db_user     = data.terraform_remote_state.cart_database.outputs.mongo_db_user
+  cart_db_password = data.terraform_remote_state.cart_database.outputs.mongo_db_password
 }
 
 data "aws_eks_cluster" "eks" {
@@ -99,34 +96,21 @@ data "kubernetes_service" "nginx_lb" {
 
 module "payment_sqs" {
   source = "./payment/sqs"
-
-}
-
-module "payment_ecr" {
-  source = "../cloud-base/modules/container-registry"
-
-  repository_name = "payment"
-}
-
-module "cart_ecr" {
-  source = "../cloud-base/modules/container-registry"
-
-  repository_name = "cart"
 }
 
 module "payment" {
   source = "./payment"
 
   app_name     = "payment"
-  image        = var.payment_image != "" ? var.payment_image : "${module.payment_ecr.repository_url}:latest"
+  image        = var.payment_image != "" ? var.payment_image : "${data.terraform_remote_state.cloud_base.outputs.payment_ecr_url}:latest"
   ingress_host = data.kubernetes_service.nginx_lb.status[0].load_balancer[0].ingress[0].hostname
   vars = merge(var.payment_vars, {
     AWS_SQS_CREATE_PAYMENT_QUEUE_URL               = module.payment_sqs.create-payment-queue_url
     AWS_SQS_PAYMENT_PAID_QUEUE_URL                 = module.payment_sqs.payment-paid-queue_url
     AWS_SQS_MERCADO_PAGO_PROCESS_PAYMENT_QUEUE_URL = module.payment_sqs.mercado-pago-process-payment-queue_url
     AWS_SQS_CANCEL_PAYMENT_QUEUE_URL               = module.payment_sqs.cancel-payment-queue_url
-    MONGODB_URI                                    = local.mongo_uri
-    DB_HOST                                        = local.mongo_host
+    MONGODB_URI                                    = local.payment_db_uri
+    DB_HOST                                        = local.payment_db_host
   })
 
   depends_on = [helm_release.ingress_nginx]
@@ -136,14 +120,14 @@ module "cart" {
   source = "./cart"
 
   app_name     = "cart"
-  image        = var.cart_image != "" ? var.cart_image : "${module.cart_ecr.repository_url}:latest"
+  image        = var.cart_image != "" ? var.cart_image : "${data.terraform_remote_state.cloud_base.outputs.cart_ecr_url}:latest"
   ingress_host = data.kubernetes_service.nginx_lb.status[0].load_balancer[0].ingress[0].hostname
 
-  db_host     = local.mongo_db_host_cart
-  db_name     = local.mongo_db_name_cart
-  db_password = local.mongo_db_password_cart
-  db_port     = local.mongo_db_port_cart
-  db_user     = local.mongo_db_user_cart
+  db_host     = local.cart_db_host
+  db_name     = local.cart_db_name
+  db_password = local.cart_db_password
+  db_port     = 27017
+  db_user     = local.cart_db_user
 }
 
 module "api_gateway" {
@@ -160,4 +144,3 @@ module "api_gateway" {
 
   depends_on = [helm_release.ingress_nginx]
 }
-

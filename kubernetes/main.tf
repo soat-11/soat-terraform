@@ -4,20 +4,13 @@ provider "aws" {
   region = var.region
 }
 
-# -----------------------------------------------------------------------------
-# IAM Role Configuration
-# -----------------------------------------------------------------------------
 # var.create_iam_roles = false (default) -> usa LabRole
-# var.create_iam_roles = true            -> cria roles próprios
+# var.create_iam_roles = true -> cria roles próprios
 locals {
   lab_role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole"
-  # Se create_iam_roles = false, passa LabRole. Se true, passa "" para criar novo.
   eks_role_arn = var.create_iam_roles ? "" : local.lab_role_arn
 }
 
-# ----------------------
-# Remote State - Cloud Base
-# ----------------------
 data "terraform_remote_state" "cloud_base" {
   backend = "s3"
   config = {
@@ -27,9 +20,6 @@ data "terraform_remote_state" "cloud_base" {
   }
 }
 
-# ----------------------
-# EKS Cluster
-# ----------------------
 module "eks_cluster" {
   source = "./modules/cluster"
 
@@ -40,9 +30,6 @@ module "eks_cluster" {
   security_group_ids = data.terraform_remote_state.cloud_base.outputs.security_group_ids
 }
 
-# ----------------------
-# EKS Node Group (Spot Instances)
-# ----------------------
 module "eks_node_group" {
   source     = "./modules/node"
   depends_on = [module.eks_cluster]
@@ -53,16 +40,11 @@ module "eks_node_group" {
   subnet_ids   = data.terraform_remote_state.cloud_base.outputs.subnet_ids
 }
 
-# ----------------------
-# EKS Access Entry
-# ----------------------
-# Obtém a identidade atual (usuário ou role que está executando o Terraform)
 data "aws_iam_session_context" "current" {
   arn = data.aws_caller_identity.current.arn
 }
 
 locals {
-  # Para AWS Academy usa voclabs, para conta própria usa o caller atual
   access_principal_arn = var.create_iam_roles ? data.aws_iam_session_context.current.issuer_arn : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/voclabs"
 }
 
@@ -87,9 +69,6 @@ resource "aws_eks_access_policy_association" "eks_access_policy" {
   depends_on = [aws_eks_access_entry.access_entry]
 }
 
-# ----------------------
-# Kubernetes & Helm Providers
-# ----------------------
 data "aws_eks_cluster" "eks" {
   name       = module.eks_cluster.cluster_name
   depends_on = [module.eks_cluster]
@@ -114,12 +93,8 @@ provider "helm" {
   }
 }
 
-# ----------------------
-# Metrics Server
-# ----------------------
 module "metrics" {
   source = "./modules/metrics"
 
   depends_on = [module.eks_node_group, module.eks_cluster]
 }
-

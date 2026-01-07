@@ -1,10 +1,3 @@
-# =============================================================================
-# Database EC2 Module - Main
-# =============================================================================
-# Provisiona EC2 + EBS + Security Group para bancos de dados em ambiente dev/test.
-# O banco específico (Mongo, Postgres, Redis, etc.) é configurado via user_data.
-# =============================================================================
-
 locals {
   common_tags = merge(
     {
@@ -16,24 +9,15 @@ locals {
   )
 }
 
-# -----------------------------------------------------------------------------
-# Data Sources
-# -----------------------------------------------------------------------------
-
 data "aws_subnet" "selected" {
   id = var.subnet_id
 }
-
-# -----------------------------------------------------------------------------
-# Security Group
-# -----------------------------------------------------------------------------
 
 resource "aws_security_group" "database" {
   name        = "${var.project_name}-database-sg"
   description = "Security Group for ${var.project_name} database"
   vpc_id      = var.vpc_id
 
-  # Ingress: Permite acesso à porta do banco apenas dos CIDRs permitidos
   ingress {
     description     = "Database port access"
     from_port       = var.db_port
@@ -42,7 +26,6 @@ resource "aws_security_group" "database" {
     cidr_blocks     = var.allowed_cidrs
     security_groups = var.allowed_security_groups
   }
-
 
   dynamic "ingress" {
     for_each = var.key_name != null ? [1] : []
@@ -56,7 +39,6 @@ resource "aws_security_group" "database" {
     }
   }
 
-  # Egress: Permite todo tráfego de saída (necessário para baixar Docker/imagens)
   egress {
     description = "Allow all outbound traffic"
     from_port   = 0
@@ -74,9 +56,6 @@ resource "aws_security_group" "database" {
   }
 }
 
-
-# EC2 Instance
-
 resource "aws_instance" "database" {
   ami                         = var.ami_id
   instance_type               = var.instance_type
@@ -85,11 +64,9 @@ resource "aws_instance" "database" {
   key_name                    = var.key_name
   associate_public_ip_address = var.associate_public_ip
 
-
   credit_specification {
     cpu_credits = "standard"
   }
-
 
   root_block_device {
     volume_size           = var.root_volume_size
@@ -98,23 +75,17 @@ resource "aws_instance" "database" {
     encrypted             = true
   }
 
-
-  user_data = var.user_data_script
-
-
+  user_data  = var.user_data_script
   monitoring = false
 
   tags = merge(local.common_tags, {
     Name = "${var.project_name}-database"
   })
 
-
   lifecycle {
     ignore_changes = [ami]
   }
 }
-
-# EBS Data Volume (Persistência)
 
 resource "aws_ebs_volume" "data" {
   availability_zone = data.aws_subnet.selected.availability_zone
@@ -126,26 +97,15 @@ resource "aws_ebs_volume" "data" {
     Name = "${var.project_name}-database-data"
   })
 
-  # Isso garante que os dados sobrevivam a terraform destroy parcial
   lifecycle {
     prevent_destroy = false
   }
 }
 
-
-# Volume Attachment
-
-
 resource "aws_volume_attachment" "data" {
-  device_name = "/dev/xvdf"
-  volume_id   = aws_ebs_volume.data.id
-  instance_id = aws_instance.database.id
-
-  # Force detach permite recriar a instância sem falhas
+  device_name  = "/dev/xvdf"
+  volume_id    = aws_ebs_volume.data.id
+  instance_id  = aws_instance.database.id
   force_detach = true
-
-  # Não deletar o volume quando a instância for terminada
-  # O volume EBS é gerenciado separadamente
   skip_destroy = true
 }
-

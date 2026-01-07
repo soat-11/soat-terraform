@@ -1,9 +1,10 @@
+# DEPRECATED - Usar arquitetura modular: cloud-base/, kubernetes/, apps/
+
 data "aws_caller_identity" "current" {}
 
 module "provider" {
   source = "./provider"
 }
-
 
 module "vpc" {
   source = "./vpc"
@@ -42,7 +43,6 @@ module "security_group" {
   vpc_id  = module.vpc.vpc_id
 }
 
-# Cluster com LabRole
 module "eks_service" {
   source     = "./k8s/cluster"
   depends_on = [module.subnets, module.route-table]
@@ -54,7 +54,6 @@ module "eks_service" {
   security_group_ids = module.security_group.security_group_ids
 }
 
-# Node group com LabRole
 module "eks_node_group" {
   source     = "./k8s/node"
   depends_on = [module.eks_service]
@@ -108,27 +107,7 @@ provider "helm" {
     cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks.certificate_authority[0].data)
     token                  = data.aws_eks_cluster_auth.eks.token
   }
-
 }
-
-
-# module "payment-secrets" {
-#   source = "../../shared-modules/secrets"
-
-#   db_name                      = var.db_name
-#   db_user                      = var.db_user
-#   db_password                  = var.db_password
-#   db_port                      = var.db_port
-#   db_host                      = var.db_host
-#   app_port                     = var.app_port
-#   app_base_url                 = "/"
-#   payment_access_token         = var.payment_access_token
-#   payment_api_url              = var.payment_api_url
-#   payment_user_id              = var.payment_user_id
-#   payment_pos_id               = var.payment_pos_id
-#   webhook_secret_signature_key = var.webhook_secret_signature_key
-#   webhook_api_url              = "/"
-# }
 
 module "deployment" {
   source = "./k8s/deployment"
@@ -147,7 +126,6 @@ module "metrics" {
   source = "./k8s/metrics"
 
   depends_on = [module.eks_node_group, module.eks_service]
-
 }
 
 module "deployment-hpa" {
@@ -156,12 +134,10 @@ module "deployment-hpa" {
   deployment_name = module.deployment.deployment_name
   app_name        = var.project
   depends_on      = [module.deployment, module.metrics]
-
 }
 
 module "service" {
   source = "./k8s/service"
-
 
   depends_on = [module.deployment]
 }
@@ -175,19 +151,18 @@ module "ingress" {
   depends_on   = [module.service]
 }
 
-
 output "principal_arn" {
   value = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/voclabs"
 }
 
 output "ingress_url" {
   value = module.ingress.url
-
 }
 
 module "cognito" {
   source = "./cognito"
 }
+
 module "lambda" {
   source   = "./lambda"
   project  = var.project

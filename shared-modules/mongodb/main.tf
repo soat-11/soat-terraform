@@ -1,15 +1,3 @@
-# =============================================================================
-# MongoDB Module - Main
-# =============================================================================
-# Módulo reutilizável para provisionar MongoDB em EC2.
-# Usa o módulo database-ec2 internamente + script de inicialização.
-# =============================================================================
-
-# -----------------------------------------------------------------------------
-# Remote State - Cloud Base
-# -----------------------------------------------------------------------------
-# Obtém VPC, Subnet e Security Groups automaticamente do cloud-base
-
 data "terraform_remote_state" "cloud_base" {
   backend = "s3"
   config = {
@@ -18,10 +6,6 @@ data "terraform_remote_state" "cloud_base" {
     region = "us-east-1"
   }
 }
-
-# -----------------------------------------------------------------------------
-# AMI - Amazon Linux 2
-# -----------------------------------------------------------------------------
 
 data "aws_ami" "amazon_linux_2" {
   most_recent = true
@@ -32,10 +16,6 @@ data "aws_ami" "amazon_linux_2" {
     values = ["amzn2-ami-hvm-*-x86_64-gp2"]
   }
 }
-
-# -----------------------------------------------------------------------------
-# MongoDB Instance
-# -----------------------------------------------------------------------------
 
 module "database" {
   source = "../database-ec2"
@@ -48,7 +28,6 @@ module "database" {
   data_volume_size = var.data_volume_size
   db_port          = 27017
 
-  # Segurança: aceita conexões da VPC + Security Groups do EKS
   allowed_cidrs           = [data.terraform_remote_state.cloud_base.outputs.vpc_cidr_block]
   allowed_security_groups = try([data.terraform_remote_state.cloud_base.outputs.database_security_group_id], [])
 
@@ -61,4 +40,3 @@ module "database" {
 
   tags = var.tags
 }
-

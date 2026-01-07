@@ -60,18 +60,3 @@ variable "backend_bucket" {
   default     = "arao-soat-terraform-challenge"
 }
 
-# -----------------------------------------------------------------------------
-# MongoDB Credentials
-# -----------------------------------------------------------------------------
-# Credenciais do MongoDB (devem ser as mesmas usadas no apps/payment/database)
-variable "mongo_user" {
-  description = "Usuário admin do MongoDB"
-  type        = string
-  default     = "soat-admin"
-}
-
-variable "mongo_password" {
-  description = "Senha do MongoDB"
-  type        = string
-  sensitive   = true
-}
