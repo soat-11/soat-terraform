@@ -34,10 +34,27 @@ data "terraform_remote_state" "payment_database" {
   }
 }
 
+data "terraform_remote_state" "cart_database" {
+  backend = "s3"
+  config = {
+    bucket = var.backend_bucket
+    key    = "apps/cart/database/terraform.tfstate"
+    region = "us-east-1"
+  }
+}
+
 # MongoDB URI construída automaticamente
 locals {
   mongo_host = data.terraform_remote_state.payment_database.outputs.mongo_private_ip
   mongo_uri  = "mongodb://${var.mongo_user}:${var.mongo_password}@${local.mongo_host}:27017/payment?authSource=admin"
+
+  mongo_host_cart        = data.terraform_remote_state.cart_database.outputs.private_ip
+  mongo_db_name_cart     = data.terraform_remote_state.cart_database.outputs.mongo_db_name
+  mongo_db_user_cart     = data.terraform_remote_state.cart_database.outputs.mongo_db_user
+  mongo_db_password_cart = data.terraform_remote_state.cart_database.outputs.mongo_db_password
+  mongo_db_host_cart     = data.terraform_remote_state.cart_database.outputs.private_ip
+  mongo_db_port_cart     = 27017
+
 }
 
 data "aws_eks_cluster" "eks" {
@@ -91,6 +108,12 @@ module "payment_ecr" {
   repository_name = "payment"
 }
 
+module "cart_ecr" {
+  source = "../cloud-base/modules/container-registry"
+
+  repository_name = "cart"
+}
+
 module "payment" {
   source = "./payment"
 
@@ -109,22 +132,19 @@ module "payment" {
   depends_on = [helm_release.ingress_nginx]
 }
 
-# module "cart" {
-#   source = "./cart"
+module "cart" {
+  source = "./cart"
 
-#   app_name     = "cart"
-#   image        = var.cart_image != "" ? var.cart_image : data.terraform_remote_state.cloud_base.outputs.repository_url
-#   ingress_host = data.kubernetes_service.nginx_lb.status[0].load_balancer[0].ingress[0].hostname
+  app_name     = "cart"
+  image        = var.cart_image != "" ? var.cart_image : "${module.cart_ecr.repository_url}:latest"
+  ingress_host = data.kubernetes_service.nginx_lb.status[0].load_balancer[0].ingress[0].hostname
 
-#   db_name     = "var.db_name"
-#   db_user     = "var.cart_vars.DB_USER"
-#   db_password = "var.cart_vars.DB_PASSWORD"
-#   db_host     = "var.cart_vars.DB_HOST"
-#   db_port     = "var.cart_vars.DB_PORT"
-#   app_port    = "var.cart_vars.PORT"
-
-#   depends_on = [helm_release.ingress_nginx]
-# }
+  db_host     = local.mongo_db_host_cart
+  db_name     = local.mongo_db_name_cart
+  db_password = local.mongo_db_password_cart
+  db_port     = local.mongo_db_port_cart
+  db_user     = local.mongo_db_user_cart
+}
 
 module "api_gateway" {
   source = "./modules/api-gateway"

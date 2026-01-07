@@ -1,6 +1,3 @@
-# =============================================================================
-# MongoDB Module - Outputs
-# =============================================================================
 
 output "private_ip" {
   description = "IP privado da instância MongoDB"
@@ -34,3 +31,19 @@ output "connection_uri_admin" {
   sensitive   = true
 }
 
+output "database_name" {
+  description = "Nome do database"
+  value       = var.database_name != "" ? var.database_name : var.project_name
+}
+
+output "db_user" {
+  description = "Usuário do MongoDB"
+  value       = var.db_user
+  sensitive   = true
+}
+
+output "db_password" {
+  description = "Senha do MongoDB"
+  value       = var.db_password
+  sensitive   = true
+}

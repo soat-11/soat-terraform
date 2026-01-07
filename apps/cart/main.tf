@@ -1,19 +1,15 @@
-# ----------------------
-# Cart Microservice
-# ----------------------
 
 module "secrets" {
   source = "../../shared-modules/secrets"
 
   app_name = var.app_name
   secret_data = {
-    DB_NAME      = var.db_name
-    DB_USER      = var.db_user
-    DB_PASSWORD  = var.db_password
-    DB_PORT      = tostring(var.db_port)
-    DB_HOST      = var.db_host
-    APP_PORT     = tostring(var.app_port)
-    APP_BASE_URL = var.app_base_url
+    PORT        = var.app_port
+    DB_USER     = var.db_user
+    DB_PASSWORD = var.db_password
+    DB_HOST     = var.db_host
+    DB_PORT     = var.db_port
+    DB_NAME     = var.db_name
   }
 }
 
@@ -22,10 +18,9 @@ module "deployment" {
 
   app_name       = var.app_name
   image          = var.image
+  replicas       = 1
   secret_name    = module.secrets.secret_name
   container_port = var.app_port
-
-  # Optimized for lightweight application
   cpu_request    = var.cpu_request
   memory_request = var.memory_request
   cpu_limit      = var.cpu_limit

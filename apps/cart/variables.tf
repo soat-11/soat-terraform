@@ -48,11 +48,6 @@ variable "app_port" {
   default     = 3010
 }
 
-variable "app_base_url" {
-  description = "Application base URL"
-  type        = string
-  default     = "/"
-}
 
 # Resources - optimized for lightweight apps
 variable "cpu_request" {
