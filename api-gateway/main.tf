@@ -6,6 +6,14 @@ resource "aws_api_gateway_rest_api" "this" {
   description = "API Gateway para autenticação e EKS"
 }
 
+resource "aws_api_gateway_authorizer" "cognito_auth" {
+  name          = "CognitoAuthorizer"
+  type          = "COGNITO_USER_POOLS"
+  rest_api_id   = aws_api_gateway_rest_api.this.id
+  provider_arns = [var.cognito_user_pool_arn]
+}
+
+
 # ----------------------
 # Lambda: Signup
 # ----------------------
@@ -85,11 +93,13 @@ resource "aws_api_gateway_method" "proxy_any" {
   rest_api_id   = aws_api_gateway_rest_api.this.id
   resource_id   = aws_api_gateway_resource.proxy.id
   http_method   = "ANY"
-  authorization = "NONE"
+  
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito_auth.id
 
   request_parameters = {
     "method.request.path.proxy" = true
-    "method.request.header.Authorization" = false # true se seu backend exigir token
+    "method.request.header.Authorization" = true
   }
 }
 
@@ -105,6 +115,7 @@ resource "aws_api_gateway_integration" "proxy_any" {
   request_parameters = {
     "integration.request.path.proxy"          = "method.request.path.proxy"
     "integration.request.header.Authorization" = "method.request.header.Authorization"
+    "integration.request.header.x-user-id"     = "context.authorizer.claims.sub"
   }
 }
 
