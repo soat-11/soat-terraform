@@ -21,3 +21,11 @@ variable "lambda_zip_path" {
   default     = ""
 }
 
+variable "cognito_user_pool_id" {
+  description = "The ID of the Cognito User Pool"
+  type        = string
+}
+
+variable "cognito_app_client_id" {
+  description = "The ID of the Cognito App Client"
+}
