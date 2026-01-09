@@ -15,67 +15,67 @@ resource "aws_api_gateway_authorizer" "cognito_auth" {
 
 
 # ----------------------
-# Lambda: Signup
+# Lambda: anonymous-login
 # ----------------------
-resource "aws_api_gateway_resource" "signup" {
+resource "aws_api_gateway_resource" "anonymous_login" {
   rest_api_id = aws_api_gateway_rest_api.this.id
   parent_id   = aws_api_gateway_rest_api.this.root_resource_id
-  path_part   = "signup"
+  path_part   = "anonymous-login"
 }
 
-resource "aws_api_gateway_method" "signup_post" {
+resource "aws_api_gateway_method" "anonymous_login_post" {
   rest_api_id   = aws_api_gateway_rest_api.this.id
-  resource_id   = aws_api_gateway_resource.signup.id
+  resource_id   = aws_api_gateway_resource.anonymous_login.id
   http_method   = "POST"
   authorization = "NONE"
 }
 
-resource "aws_api_gateway_integration" "signup_post" {
+resource "aws_api_gateway_integration" "anonymous_login_post" {
   rest_api_id             = aws_api_gateway_rest_api.this.id
-  resource_id             = aws_api_gateway_method.signup_post.resource_id
-  http_method             = aws_api_gateway_method.signup_post.http_method
+  resource_id             = aws_api_gateway_method.anonymous_login_post.resource_id
+  http_method             = aws_api_gateway_method.anonymous_login_post.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = var.signup_lambda_arn
+  uri                     = var.anonymous_login_lambda_arn
 }
 
-resource "aws_lambda_permission" "allow_api_gateway_signup" {
+resource "aws_lambda_permission" "allow_api_gateway_anonymous_login" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = var.signup_function_name
+  function_name = var.anonymous_login_function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_api_gateway_rest_api.this.execution_arn}/*/*"
 }
 
 # ----------------------
-# Lambda: Login
+# Lambda: signup-and-login
 # ----------------------
-resource "aws_api_gateway_resource" "login" {
+resource "aws_api_gateway_resource" "signup_and_login" {
   rest_api_id = aws_api_gateway_rest_api.this.id
   parent_id   = aws_api_gateway_rest_api.this.root_resource_id
-  path_part   = "login"
+  path_part   = "signup-and-login"
 }
 
-resource "aws_api_gateway_method" "login_post" {
+resource "aws_api_gateway_method" "signup_and_login_post" {
   rest_api_id   = aws_api_gateway_rest_api.this.id
-  resource_id   = aws_api_gateway_resource.login.id
+  resource_id   = aws_api_gateway_resource.signup_and_login.id
   http_method   = "POST"
   authorization = "NONE"
 }
 
-resource "aws_api_gateway_integration" "login_post" {
+resource "aws_api_gateway_integration" "signup_and_login_post" {
   rest_api_id             = aws_api_gateway_rest_api.this.id
-  resource_id             = aws_api_gateway_method.login_post.resource_id
-  http_method             = aws_api_gateway_method.login_post.http_method
+  resource_id             = aws_api_gateway_method.signup_and_login_post.resource_id
+  http_method             = aws_api_gateway_method.signup_and_login_post.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = var.login_lambda_arn
+  uri                     = var.signup_and_login_lambda_arn
 }
 
-resource "aws_lambda_permission" "allow_api_gateway_login" {
+resource "aws_lambda_permission" "allow_api_gateway_signup_and_login" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = var.login_function_name
+  function_name = var.signup_and_login_function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_api_gateway_rest_api.this.execution_arn}/*/*"
 }
@@ -131,8 +131,8 @@ resource "aws_api_gateway_deployment" "deploy" {
 
   depends_on = [
     aws_api_gateway_integration.proxy_any,
-    aws_api_gateway_integration.login_post,
-    aws_api_gateway_integration.signup_post
+    aws_api_gateway_integration.signup_and_login_post,
+    aws_api_gateway_integration.anonymous_login_post
   ]
 }
 

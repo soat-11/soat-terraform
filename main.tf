@@ -207,10 +207,10 @@ module "api_gateway" {
 
   project               = var.project
   region                = var.region
-  signup_lambda_arn     = module.lambda.signup_lambda_arn
-  signup_function_name  = module.lambda.function_name_signup
-  login_lambda_arn      = module.lambda.login_lambda_arn
-  login_function_name   = module.lambda.function_name_login
+  signup_and_login_lambda_arn = module.lambda.signup_and_login_lambda_arn
+  signup_and_login_function_name = module.lambda.function_name_signup_and_login
+  anonymous_login_lambda_arn      = module.lambda.login_lambda_arn
+  anonymous_login_function_name   = module.lambda.function_name_login
   cognito_user_pool_arn = module.cognito.user_pool_arn
   eks_nlb_hostname      = module.ingress.url
 

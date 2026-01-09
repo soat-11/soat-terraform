@@ -6,10 +6,10 @@ resource "aws_s3_bucket" "lambda_bucket" {
   }
 }
 
-resource "aws_lambda_function" "signup" {
-  function_name = "${var.project}-signup"
+resource "aws_lambda_function" "signup_and_login" {
+  function_name = "${var.project}-signup-and-login"
   role          = var.role_arn
-  handler       = "functions/signup.handler"
+  handler       = "functions/signup-and-login.handler"
   runtime       = "nodejs22.x"
   timeout = 15
 
@@ -21,10 +21,10 @@ resource "aws_lambda_function" "signup" {
   depends_on = [aws_s3_bucket.lambda_bucket]
 }
 
-resource "aws_lambda_function" "login" {
-  function_name = "${var.project}-login"
+resource "aws_lambda_function" "anonymous_login" {
+  function_name = "${var.project}-anonymous-login"
   role          = var.role_arn
-  handler       = "functions/login.handler"
+  handler       = "functions/anonymous-login.handler"
   runtime       = "nodejs22.x"
   timeout = 15
 
