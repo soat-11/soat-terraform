@@ -8,22 +8,22 @@ variable "region" {
   type = string
 }
 
-variable "signup_lambda_arn" {
-  description = "ARN of the signup lambda function"
+variable "anonymous_login_lambda_arn" {
+  description = "ARN of the anonymous login lambda function"
   type = string
 }
 
-variable "login_lambda_arn" {
-  description = "ARN of the login lambda function"
+variable "signup_and_login_lambda_arn" {
+  description = "ARN of the signup and login lambda function"
   type = string
 }
 
-variable "signup_function_name" {
-  description = "Name of the signup lambda function"
+variable "anonymous_login_function_name" {
+  description = "Name of the anonymous login lambda function"
   type = string 
 }
-variable "login_function_name" {
-  description = "Name of the login lambda function"
+variable "signup_and_login_function_name" {
+  description = "Name of the signup and login lambda function"
   type = string 
 }
 

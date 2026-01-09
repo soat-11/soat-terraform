@@ -165,7 +165,7 @@ module "cognito" {
 
 module "lambda" {
   source   = "./lambda"
-  project  = var.project
+  project = var.project
   role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole"
 }
 
@@ -174,14 +174,14 @@ module "api_gateway" {
 
   project               = var.project
   region                = var.region
-  signup_lambda_arn     = module.lambda.signup_lambda_arn
-  signup_function_name  = module.lambda.function_name_signup
-  login_lambda_arn      = module.lambda.login_lambda_arn
-  login_function_name   = module.lambda.function_name_login
+  signup_and_login_lambda_arn = module.lambda.signup_and_login_lambda_arn
+  signup_and_login_function_name = module.lambda.function_name_signup_and_login
+  anonymous_login_lambda_arn      = module.lambda.login_lambda_arn
+  anonymous_login_function_name   = module.lambda.function_name_login
   cognito_user_pool_arn = module.cognito.user_pool_arn
   eks_nlb_hostname      = module.ingress.url
 
-  depends_on = [module.ingress]
+  depends_on = [ module.ingress ]
 }
 
 output "url_api_gateway" {
