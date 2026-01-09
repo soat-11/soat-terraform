@@ -80,7 +80,7 @@ resource "aws_lambda_permission" "allow_api_gateway_signup_and_login" {
 }
 
 # ----------------------
-# Payment routes (mantido)
+# Payment routes
 # ----------------------
 resource "aws_api_gateway_resource" "payment" {
   rest_api_id = aws_api_gateway_rest_api.this.id
@@ -135,6 +135,171 @@ resource "aws_api_gateway_integration" "payment_any" {
 }
 
 # ----------------------
+# Cart routes
+# ----------------------
+resource "aws_api_gateway_resource" "cart" {
+  rest_api_id = aws_api_gateway_rest_api.this.id
+  parent_id   = aws_api_gateway_rest_api.this.root_resource_id
+  path_part   = "cart"
+}
+
+resource "aws_api_gateway_method" "cart_root" {
+  rest_api_id   = aws_api_gateway_rest_api.this.id
+  resource_id   = aws_api_gateway_resource.cart.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "cart_root" {
+  rest_api_id             = aws_api_gateway_rest_api.this.id
+  resource_id             = aws_api_gateway_resource.cart.id
+  http_method             = aws_api_gateway_method.cart_root.http_method
+  integration_http_method = "ANY"
+  type                    = "HTTP_PROXY"
+  uri                     = "http://${var.eks_nlb_hostname}/cart"
+}
+
+resource "aws_api_gateway_resource" "cart_proxy" {
+  rest_api_id = aws_api_gateway_rest_api.this.id
+  parent_id   = aws_api_gateway_resource.cart.id
+  path_part   = "{proxy+}"
+}
+
+resource "aws_api_gateway_method" "cart_any" {
+  rest_api_id   = aws_api_gateway_rest_api.this.id
+  resource_id   = aws_api_gateway_resource.cart_proxy.id
+  http_method   = "ANY"
+  authorization = "NONE"
+
+  request_parameters = {
+    "method.request.path.proxy" = true
+  }
+}
+
+resource "aws_api_gateway_integration" "cart_any" {
+  rest_api_id             = aws_api_gateway_rest_api.this.id
+  resource_id             = aws_api_gateway_resource.cart_proxy.id
+  http_method             = aws_api_gateway_method.cart_any.http_method
+  integration_http_method = "ANY"
+  type                    = "HTTP_PROXY"
+  uri                     = "http://${var.eks_nlb_hostname}/cart/{proxy}"
+
+  request_parameters = {
+    "integration.request.path.proxy" = "method.request.path.proxy"
+  }
+}
+
+# ----------------------
+# Production routes
+# ----------------------
+resource "aws_api_gateway_resource" "production" {
+  rest_api_id = aws_api_gateway_rest_api.this.id
+  parent_id   = aws_api_gateway_rest_api.this.root_resource_id
+  path_part   = "production"
+}
+
+resource "aws_api_gateway_method" "production_root" {
+  rest_api_id   = aws_api_gateway_rest_api.this.id
+  resource_id   = aws_api_gateway_resource.production.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "production_root" {
+  rest_api_id             = aws_api_gateway_rest_api.this.id
+  resource_id             = aws_api_gateway_resource.production.id
+  http_method             = aws_api_gateway_method.production_root.http_method
+  integration_http_method = "ANY"
+  type                    = "HTTP_PROXY"
+  uri                     = "http://${var.eks_nlb_hostname}/production"
+}
+
+resource "aws_api_gateway_resource" "production_proxy" {
+  rest_api_id = aws_api_gateway_rest_api.this.id
+  parent_id   = aws_api_gateway_resource.production.id
+  path_part   = "{proxy+}"
+}
+
+resource "aws_api_gateway_method" "production_any" {
+  rest_api_id   = aws_api_gateway_rest_api.this.id
+  resource_id   = aws_api_gateway_resource.production_proxy.id
+  http_method   = "ANY"
+  authorization = "NONE"
+
+  request_parameters = {
+    "method.request.path.proxy" = true
+  }
+}
+
+resource "aws_api_gateway_integration" "production_any" {
+  rest_api_id             = aws_api_gateway_rest_api.this.id
+  resource_id             = aws_api_gateway_resource.production_proxy.id
+  http_method             = aws_api_gateway_method.production_any.http_method
+  integration_http_method = "ANY"
+  type                    = "HTTP_PROXY"
+  uri                     = "http://${var.eks_nlb_hostname}/production/{proxy}"
+
+  request_parameters = {
+    "integration.request.path.proxy" = "method.request.path.proxy"
+  }
+}
+
+# ----------------------
+# Order routes
+# ----------------------
+resource "aws_api_gateway_resource" "order" {
+  rest_api_id = aws_api_gateway_rest_api.this.id
+  parent_id   = aws_api_gateway_rest_api.this.root_resource_id
+  path_part   = "order"
+}
+
+resource "aws_api_gateway_method" "order_root" {
+  rest_api_id   = aws_api_gateway_rest_api.this.id
+  resource_id   = aws_api_gateway_resource.order.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "order_root" {
+  rest_api_id             = aws_api_gateway_rest_api.this.id
+  resource_id             = aws_api_gateway_resource.order.id
+  http_method             = aws_api_gateway_method.order_root.http_method
+  integration_http_method = "ANY"
+  type                    = "HTTP_PROXY"
+  uri                     = "http://${var.eks_nlb_hostname}/order"
+}
+
+resource "aws_api_gateway_resource" "order_proxy" {
+  rest_api_id = aws_api_gateway_rest_api.this.id
+  parent_id   = aws_api_gateway_resource.order.id
+  path_part   = "{proxy+}"
+}
+
+resource "aws_api_gateway_method" "order_any" {
+  rest_api_id   = aws_api_gateway_rest_api.this.id
+  resource_id   = aws_api_gateway_resource.order_proxy.id
+  http_method   = "ANY"
+  authorization = "NONE"
+
+  request_parameters = {
+    "method.request.path.proxy" = true
+  }
+}
+
+resource "aws_api_gateway_integration" "order_any" {
+  rest_api_id             = aws_api_gateway_rest_api.this.id
+  resource_id             = aws_api_gateway_resource.order_proxy.id
+  http_method             = aws_api_gateway_method.order_any.http_method
+  integration_http_method = "ANY"
+  type                    = "HTTP_PROXY"
+  uri                     = "http://${var.eks_nlb_hostname}/order/{proxy}"
+
+  request_parameters = {
+    "integration.request.path.proxy" = "method.request.path.proxy"
+  }
+}
+
+# ----------------------
 # Proxy para EKS - qualquer rota
 # ----------------------
 resource "aws_api_gateway_resource" "proxy" {
@@ -181,20 +346,44 @@ resource "aws_api_gateway_deployment" "deploy" {
 
   triggers = {
     redeployment = sha1(jsonencode([
+      # Lambda routes
       aws_api_gateway_resource.anonymous_login.id,
       aws_api_gateway_resource.signup_and_login.id,
-      aws_api_gateway_resource.payment.id,
-      aws_api_gateway_resource.payment_proxy.id,
-      aws_api_gateway_resource.proxy.id,
       aws_api_gateway_method.anonymous_login_post.id,
       aws_api_gateway_method.signup_and_login_post.id,
-      aws_api_gateway_method.payment_root.id,
-      aws_api_gateway_method.payment_any.id,
-      aws_api_gateway_method.proxy_any.id,
       aws_api_gateway_integration.anonymous_login_post.id,
       aws_api_gateway_integration.signup_and_login_post.id,
+      # Payment routes
+      aws_api_gateway_resource.payment.id,
+      aws_api_gateway_resource.payment_proxy.id,
+      aws_api_gateway_method.payment_root.id,
+      aws_api_gateway_method.payment_any.id,
       aws_api_gateway_integration.payment_root.id,
       aws_api_gateway_integration.payment_any.id,
+      # Cart routes
+      aws_api_gateway_resource.cart.id,
+      aws_api_gateway_resource.cart_proxy.id,
+      aws_api_gateway_method.cart_root.id,
+      aws_api_gateway_method.cart_any.id,
+      aws_api_gateway_integration.cart_root.id,
+      aws_api_gateway_integration.cart_any.id,
+      # Production routes
+      aws_api_gateway_resource.production.id,
+      aws_api_gateway_resource.production_proxy.id,
+      aws_api_gateway_method.production_root.id,
+      aws_api_gateway_method.production_any.id,
+      aws_api_gateway_integration.production_root.id,
+      aws_api_gateway_integration.production_any.id,
+      # Order routes
+      aws_api_gateway_resource.order.id,
+      aws_api_gateway_resource.order_proxy.id,
+      aws_api_gateway_method.order_root.id,
+      aws_api_gateway_method.order_any.id,
+      aws_api_gateway_integration.order_root.id,
+      aws_api_gateway_integration.order_any.id,
+      # Proxy route
+      aws_api_gateway_resource.proxy.id,
+      aws_api_gateway_method.proxy_any.id,
       aws_api_gateway_integration.proxy_any.id,
     ]))
   }
@@ -204,11 +393,17 @@ resource "aws_api_gateway_deployment" "deploy" {
   }
 
   depends_on = [
-    aws_api_gateway_integration.proxy_any,
     aws_api_gateway_integration.anonymous_login_post,
     aws_api_gateway_integration.signup_and_login_post,
     aws_api_gateway_integration.payment_root,
-    aws_api_gateway_integration.payment_any
+    aws_api_gateway_integration.payment_any,
+    aws_api_gateway_integration.cart_root,
+    aws_api_gateway_integration.cart_any,
+    aws_api_gateway_integration.production_root,
+    aws_api_gateway_integration.production_any,
+    aws_api_gateway_integration.order_root,
+    aws_api_gateway_integration.order_any,
+    aws_api_gateway_integration.proxy_any
   ]
 }
 

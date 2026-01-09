@@ -146,7 +146,9 @@ module "payment" {
     AWS_SQS_CANCEL_PAYMENT_QUEUE_URL               = module.payment_sqs.cancel-payment-queue_url
     MONGODB_URI                                    = local.payment_db_uri
     DB_HOST                                        = local.payment_db_host
+    CART_API_URL                                   = "http://${module.cart.service_name}:${module.cart.service_port}"
   })
+
 
   depends_on = [helm_release.ingress_nginx]
 }
