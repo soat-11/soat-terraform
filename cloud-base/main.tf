@@ -61,6 +61,16 @@ module "cart_ecr" {
   repository_name = "cart"
 }
 
+module "production_ecr" {
+  source          = "./modules/container-registry"
+  repository_name = "production"
+}
+
+module "order_ecr" {
+  source          = "./modules/container-registry"
+  repository_name = "order"
+}
+
 module "bucket" {
   source  = "./modules/bucket"
   project = var.project

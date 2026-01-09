@@ -25,6 +25,6 @@ output "api_gateway_url" {
 
 output "payment_repository_url" {
   description = "Payment ECR repository URL"
-  value       = module.payment_ecr.repository_url
+  value       = data.terraform_remote_state.cloud_base.outputs.payment_ecr_url
 }
 
