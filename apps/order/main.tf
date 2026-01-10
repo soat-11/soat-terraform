@@ -65,11 +65,13 @@ module "hpa" {
 module "ingress" {
   source = "../../shared-modules/ingress"
 
-  app_name     = var.app_name
-  service_name = module.service.service_name
-  service_port = module.service.service_port
-  host         = var.ingress_host
-  path         = "/order"
+  app_name       = var.app_name
+  service_name   = module.service.service_name
+  service_port   = module.service.service_port
+  host           = var.ingress_host
+  path           = "/order(/|$)(.*)"
+  path_type      = "ImplementationSpecific"
+  rewrite_target = "/$2"
 
   depends_on = [module.service]
 }

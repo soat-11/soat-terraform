@@ -38,7 +38,7 @@ variable "path_type" {
 }
 
 variable "rewrite_target" {
-  description = "The rewrite target for nginx"
+  description = "The rewrite target for nginx (use $1, $2 for regex capture groups)"
   type        = string
   default     = "/"
 }

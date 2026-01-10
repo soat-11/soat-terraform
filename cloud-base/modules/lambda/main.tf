@@ -49,11 +49,12 @@ resource "aws_s3_bucket" "lambda_bucket" {
 }
 
 # Upload do ZIP para S3 (necessário para arquivos > 50MB)
+# O key inclui o hash do arquivo para forçar atualização da Lambda
 resource "aws_s3_object" "lambda_zip" {
   count = var.is_local ? 0 : 1
 
   bucket = aws_s3_bucket.lambda_bucket.id
-  key    = "lambda-code.zip"
+  key    = "lambda-code-${filemd5(local.lambda_zip)}.zip"
   source = local.lambda_zip
   etag   = filemd5(local.lambda_zip)
 }
@@ -69,7 +70,7 @@ resource "aws_lambda_function" "signup" {
   filename         = var.is_local ? local.lambda_zip : null
   s3_bucket        = var.is_local ? null : aws_s3_bucket.lambda_bucket.id
   s3_key           = var.is_local ? null : aws_s3_object.lambda_zip[0].key
-  source_code_hash = var.is_local ? null : filebase64sha256(local.lambda_zip)
+  source_code_hash = filebase64sha256(local.lambda_zip)
 
   depends_on = [
     aws_s3_bucket.lambda_bucket,
@@ -88,7 +89,7 @@ resource "aws_lambda_function" "login" {
   filename         = var.is_local ? local.lambda_zip : null
   s3_bucket        = var.is_local ? null : aws_s3_bucket.lambda_bucket.id
   s3_key           = var.is_local ? null : aws_s3_object.lambda_zip[0].key
-  source_code_hash = var.is_local ? null : filebase64sha256(local.lambda_zip)
+  source_code_hash = filebase64sha256(local.lambda_zip)
 
   depends_on = [
     aws_s3_bucket.lambda_bucket,
