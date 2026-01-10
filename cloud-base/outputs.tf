@@ -30,6 +30,14 @@ output "cart_ecr_url" {
   value = module.cart_ecr.repository_url
 }
 
+output "production_ecr_url" {
+  value = module.production_ecr.repository_url
+}
+
+output "order_ecr_url" {
+  value = module.order_ecr.repository_url
+}
+
 output "cognito_user_pool_id" {
   value     = module.cognito.user_pool_id
   sensitive = true

@@ -1,15 +1,23 @@
+# ----------------------
+# Production Microservice
+# ----------------------
 
 module "secrets" {
   source = "../../shared-modules/secrets"
 
   app_name = var.app_name
   secret_data = {
-    PORT        = var.app_port
-    DB_USER     = var.db_user
-    DB_PASSWORD = var.db_password
-    DB_HOST     = var.db_host
-    DB_PORT     = var.db_port
-    DB_NAME     = var.db_name
+    MONGO_URI  = var.mongo_uri
+    PORT       = tostring(var.app_port)
+    AWS_REGION = var.aws_region
+
+    AWS_ACCESS_KEY_ID     = var.aws_access_key_id
+    AWS_SECRET_ACCESS_KEY = var.aws_secret_access_key
+
+    SQS_PRODUCTION_READY_URL     = var.sqs_production_ready_url
+    SQS_PAYMENT_CONFIRMED_URL    = var.sqs_payment_confirmed_url
+    SQS_PRODUCTION_STARTED_URL   = var.sqs_production_started_url
+    SQS_PRODUCTION_WITHDRAWN_URL = var.sqs_production_withdrawn_url
   }
 }
 
@@ -18,9 +26,10 @@ module "deployment" {
 
   app_name       = var.app_name
   image          = var.image
-  replicas       = 1
   secret_name    = module.secrets.secret_name
   container_port = var.app_port
+
+
   cpu_request    = var.cpu_request
   memory_request = var.memory_request
   cpu_limit      = var.cpu_limit
@@ -54,7 +63,7 @@ module "ingress" {
   service_name   = module.service.service_name
   service_port   = module.service.service_port
   host           = var.ingress_host
-  path           = "/cart(/|$)(.*)"
+  path           = "/production(/|$)(.*)"
   path_type      = "ImplementationSpecific"
   rewrite_target = "/$2"
 

@@ -133,15 +133,15 @@ module "payment" {
 module "api_gateway" {
   source = "../../apps/modules/api-gateway"
 
-  project               = var.project
-  region                = "us-east-1"
-  is_local              = true
-  signup_lambda_arn     = data.terraform_remote_state.cloud_base.outputs.signup_lambda_arn
-  signup_function_name  = data.terraform_remote_state.cloud_base.outputs.signup_function_name
-  login_lambda_arn      = data.terraform_remote_state.cloud_base.outputs.login_lambda_arn
-  login_function_name   = data.terraform_remote_state.cloud_base.outputs.login_function_name
-  cognito_user_pool_arn = data.terraform_remote_state.cloud_base.outputs.cognito_user_pool_arn
-  eks_nlb_hostname      = local.local_config.k8s_ingress_host
+  project                        = var.project
+  region                         = "us-east-1"
+  is_local                       = true
+  anonymous_login_lambda_arn     = data.terraform_remote_state.cloud_base.outputs.login_lambda_arn
+  anonymous_login_function_name  = data.terraform_remote_state.cloud_base.outputs.login_function_name
+  signup_and_login_lambda_arn    = data.terraform_remote_state.cloud_base.outputs.signup_lambda_arn
+  signup_and_login_function_name = data.terraform_remote_state.cloud_base.outputs.signup_function_name
+  cognito_user_pool_arn          = data.terraform_remote_state.cloud_base.outputs.cognito_user_pool_arn
+  eks_nlb_hostname               = local.local_config.k8s_ingress_host
 }
 
 output "api_gateway_url" {

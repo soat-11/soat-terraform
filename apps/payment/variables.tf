@@ -72,6 +72,7 @@ variable "vars" {
     AWS_SQS_CANCEL_PAYMENT_QUEUE_URL               = string,
     MERCADO_PAGO_POS_ID                            = string,
     MERCADO_PAGO_API_URL                           = string,
+    CART_API_URL                                   = string,
     MERCADO_PAGO_PAYMENT_ACCESS_TOKEN              = string,
     MERCADO_PAGO_WEBHOOK_SECRET_KEY                = string,
     NODE_ENV                                       = string,

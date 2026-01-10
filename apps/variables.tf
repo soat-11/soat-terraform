@@ -29,7 +29,37 @@ variable "admin_image" {
   default     = ""
 }
 
+variable "production_image" {
+  description = "Container image for production service"
+  type        = string
+  default     = ""
+}
 
+variable "order_image" {
+  description = "Container image for order service"
+  type        = string
+  default     = ""
+}
+
+variable "production_vars" {
+  description = "production variables"
+  type = object({
+    AWS_REGION            = string
+    AWS_ACCESS_KEY_ID     = string
+    AWS_SECRET_ACCESS_KEY = string
+  })
+  sensitive = true
+}
+
+variable "order_vars" {
+  description = "order variables"
+  type = object({
+    AWS_REGION            = string
+    AWS_ACCESS_KEY_ID     = string
+    AWS_SECRET_ACCESS_KEY = string
+  })
+  sensitive = true
+}
 
 variable "payment_vars" {
   description = "payment variables (MONGODB_URI e DB_HOST são injetados automaticamente)"
