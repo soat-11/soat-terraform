@@ -40,6 +40,5 @@ local/*/.terraform.lock.hcl
 .DS_Store
 Thumbs.db
 
-# Lambda
+# Lambda - zip files são artefatos de build, não devem estar no Git
 *.zip
-!cloud-base/modules/lambda/lambda.zip
