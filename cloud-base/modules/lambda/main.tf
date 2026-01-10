@@ -59,12 +59,20 @@ resource "aws_s3_object" "lambda_zip" {
   etag   = filemd5(local.lambda_zip)
 }
 
-resource "aws_lambda_function" "signup" {
-  function_name = "${var.project}-signup"
+resource "aws_lambda_function" "signup_and_login" {
+  function_name = "${var.project}-signup-and-login"
   role          = local.effective_role_arn
-  handler       = var.is_local ? "index.handler" : "functions/signup.handler"
+  handler       = var.is_local ? "index.handler" : "functions/signup-and-login.handler"
   runtime       = local.runtime
   timeout       = 15
+
+  environment {
+    variables = {
+      COGNITO_REGION        = "us-east-1"
+      COGNITO_USER_POOL_ID  = var.cognito_user_pool_id
+      COGNITO_APP_CLIENT_ID = var.cognito_app_client_id
+    }
+  }
 
   # Upload direto para local, via S3 para produção (suporta arquivos grandes)
   filename         = var.is_local ? local.lambda_zip : null
@@ -78,10 +86,10 @@ resource "aws_lambda_function" "signup" {
   ]
 }
 
-resource "aws_lambda_function" "login" {
-  function_name = "${var.project}-login"
+resource "aws_lambda_function" "anonymous_login" {
+  function_name = "${var.project}-anonymous-login"
   role          = local.effective_role_arn
-  handler       = var.is_local ? "index.handler" : "functions/login.handler"
+  handler       = var.is_local ? "index.handler" : "functions/anonymous-login.handler"
   runtime       = local.runtime
   timeout       = 15
 
@@ -90,6 +98,14 @@ resource "aws_lambda_function" "login" {
   s3_bucket        = var.is_local ? null : aws_s3_bucket.lambda_bucket.id
   s3_key           = var.is_local ? null : aws_s3_object.lambda_zip[0].key
   source_code_hash = filebase64sha256(local.lambda_zip)
+
+  environment {
+    variables = {
+      COGNITO_REGION        = "us-east-1"
+      COGNITO_USER_POOL_ID  = var.cognito_user_pool_id
+      COGNITO_APP_CLIENT_ID = var.cognito_app_client_id
+    }
+  }
 
   depends_on = [
     aws_s3_bucket.lambda_bucket,
