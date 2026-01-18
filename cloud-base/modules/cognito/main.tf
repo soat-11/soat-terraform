@@ -7,18 +7,17 @@ resource "aws_cognito_user_pool" "aws_cognito_create_pool" {
 
   lifecycle {
     create_before_destroy = true
-    ignore_changes        = [schema]
   }
 
-  auto_verified_attributes = ["email"]
 
-  # Login será feito pelo CPF (armazenado em username)
   username_attributes = []
+
+  # auto_verified_attributes = []
 
   schema {
     name                = "name"
     attribute_data_type = "String"
-    required            = true
+    required            = false
     mutable             = true
   }
 
@@ -46,16 +45,16 @@ resource "aws_cognito_user_pool_client" "aws_cognito_create_app_client" {
 # SSM Parameters (stores real or mock values)
 # ----------------------
 resource "aws_ssm_parameter" "user_pool_id" {
-  name  = "/cognito/user_pool_id"
-  type  = "String"
-  value = var.is_local ? "local-user-pool-id-mock" : aws_cognito_user_pool.aws_cognito_create_pool[0].id
+  name      = "/cognito/user_pool_id"
+  type      = "String"
+  value     = var.is_local ? "local-user-pool-id-mock" : aws_cognito_user_pool.aws_cognito_create_pool[0].id
   overwrite = true
 }
 
 resource "aws_ssm_parameter" "app_client_id" {
-  name  = "/cognito/app_client_id"
-  type  = "String"
-  value = var.is_local ? "local-app-client-id-mock" : aws_cognito_user_pool_client.aws_cognito_create_app_client[0].id
+  name      = "/cognito/app_client_id"
+  type      = "String"
+  value     = var.is_local ? "local-app-client-id-mock" : aws_cognito_user_pool_client.aws_cognito_create_app_client[0].id
   overwrite = true
 }
 

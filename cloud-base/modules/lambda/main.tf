@@ -42,8 +42,8 @@ resource "aws_iam_role_policy" "lambda_cognito_policy" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect   = "Allow"
-      Action   = [
+      Effect = "Allow"
+      Action = [
         "cognito-idp:AdminConfirmSignUp",
         "cognito-idp:AdminInitiateAuth",
         "cognito-idp:AdminGetUser",
@@ -60,7 +60,7 @@ locals {
 }
 
 resource "aws_s3_bucket" "lambda_bucket" {
-  bucket = "${var.project}-lambda-bucket-v4"
+  bucket = "${var.project}-lambda-bucket-v5 "
 
   tags = {
     Name        = "${var.project}-lambda"

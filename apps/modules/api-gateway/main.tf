@@ -142,7 +142,7 @@ resource "aws_api_gateway_integration" "payment_any" {
   type                    = "HTTP_PROXY"
   uri                     = "http://${var.eks_nlb_hostname}/payment/{proxy}"
 
- request_parameters = {
+  request_parameters = {
     "integration.request.path.proxy"           = "method.request.path.proxy"
     "integration.request.header.Authorization" = "method.request.header.Authorization"
     "integration.request.header.x-session-id"  = "context.authorizer.claims.sub"
