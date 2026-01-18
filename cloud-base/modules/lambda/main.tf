@@ -1,7 +1,7 @@
 locals {
   lambda_zip     = var.lambda_zip_path != "" ? var.lambda_zip_path : "${path.module}/lambda.zip"
   runtime        = var.is_local ? "nodejs18.x" : "nodejs22.x"
-  handler_prefix = var.is_local ? "index" : "functions/signup"
+  handler_prefix = var.is_local ? "index" : "functions/signup-and-login"
 }
 
 # -----------------------------------------------------------------------------
@@ -34,13 +34,33 @@ resource "aws_iam_role_policy_attachment" "lambda_basic" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
+resource "aws_iam_role_policy" "lambda_cognito_policy" {
+  count = var.role_arn == "" ? 1 : 0
+  name  = "${var.project}-lambda-cognito-policy"
+  role  = aws_iam_role.lambda_role[0].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = [
+        "cognito-idp:AdminConfirmSignUp",
+        "cognito-idp:AdminInitiateAuth",
+        "cognito-idp:AdminGetUser",
+        "cognito-idp:SignUp"
+      ]
+      Resource = [var.cognito_user_pool_arn]
+    }]
+  })
+}
+
 locals {
   # Usa role externo se fornecido, senão usa o role criado acima
   effective_role_arn = var.role_arn != "" ? var.role_arn : aws_iam_role.lambda_role[0].arn
 }
 
 resource "aws_s3_bucket" "lambda_bucket" {
-  bucket = "${var.project}-lambda-bucket-v2"
+  bucket = "${var.project}-lambda-bucket-v4"
 
   tags = {
     Name        = "${var.project}-lambda"
@@ -82,7 +102,9 @@ resource "aws_lambda_function" "signup_and_login" {
 
   depends_on = [
     aws_s3_bucket.lambda_bucket,
-    aws_iam_role_policy_attachment.lambda_basic
+    aws_iam_role_policy_attachment.lambda_basic,
+    aws_iam_role.lambda_role,
+    aws_iam_role_policy.lambda_cognito_policy
   ]
 }
 
@@ -109,7 +131,9 @@ resource "aws_lambda_function" "anonymous_login" {
 
   depends_on = [
     aws_s3_bucket.lambda_bucket,
-    aws_iam_role_policy_attachment.lambda_basic
+    aws_iam_role_policy_attachment.lambda_basic,
+    aws_iam_role.lambda_role,
+    aws_iam_role_policy.lambda_cognito_policy
   ]
 }
 

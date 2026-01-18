@@ -43,7 +43,7 @@ resource "aws_lambda_permission" "allow_api_gateway_anonymous_login" {
   action        = "lambda:InvokeFunction"
   function_name = var.anonymous_login_function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.this.execution_arn}/*/*"
+  source_arn    = "${aws_api_gateway_rest_api.this.execution_arn}/*"
 }
 
 # ----------------------
@@ -76,7 +76,7 @@ resource "aws_lambda_permission" "allow_api_gateway_signup_and_login" {
   action        = "lambda:InvokeFunction"
   function_name = var.signup_and_login_function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.this.execution_arn}/*/*"
+  source_arn    = "${aws_api_gateway_rest_api.this.execution_arn}/*"
 }
 
 # ----------------------
@@ -92,7 +92,13 @@ resource "aws_api_gateway_method" "payment_root" {
   rest_api_id   = aws_api_gateway_rest_api.this.id
   resource_id   = aws_api_gateway_resource.payment.id
   http_method   = "ANY"
-  authorization = "NONE"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito_auth.id
+
+  request_parameters = {
+    "method.request.header.x-session-id"  = false
+    "method.request.header.Authorization" = true
+  }
 }
 
 resource "aws_api_gateway_integration" "payment_root" {
@@ -102,6 +108,11 @@ resource "aws_api_gateway_integration" "payment_root" {
   integration_http_method = "ANY"
   type                    = "HTTP_PROXY"
   uri                     = "http://${var.eks_nlb_hostname}/payment"
+
+  request_parameters = {
+    "integration.request.header.x-session-id"  = "context.authorizer.claims.sub"
+    "integration.request.header.Authorization" = "method.request.header.Authorization"
+  }
 }
 
 resource "aws_api_gateway_resource" "payment_proxy" {
@@ -114,10 +125,12 @@ resource "aws_api_gateway_method" "payment_any" {
   rest_api_id   = aws_api_gateway_rest_api.this.id
   resource_id   = aws_api_gateway_resource.payment_proxy.id
   http_method   = "ANY"
-  authorization = "NONE"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito_auth.id
 
   request_parameters = {
-    "method.request.path.proxy" = true
+    "method.request.path.proxy"           = true
+    "method.request.header.Authorization" = true
   }
 }
 
@@ -129,14 +142,16 @@ resource "aws_api_gateway_integration" "payment_any" {
   type                    = "HTTP_PROXY"
   uri                     = "http://${var.eks_nlb_hostname}/payment/{proxy}"
 
-  request_parameters = {
-    "integration.request.path.proxy" = "method.request.path.proxy"
+ request_parameters = {
+    "integration.request.path.proxy"           = "method.request.path.proxy"
+    "integration.request.header.Authorization" = "method.request.header.Authorization"
+    "integration.request.header.x-session-id"  = "context.authorizer.claims.sub"
   }
 }
 
-# ----------------------
-# Cart routes
-# ----------------------
+# # ----------------------
+# # Cart routes
+# # ----------------------
 resource "aws_api_gateway_resource" "cart" {
   rest_api_id = aws_api_gateway_rest_api.this.id
   parent_id   = aws_api_gateway_rest_api.this.root_resource_id
@@ -147,7 +162,13 @@ resource "aws_api_gateway_method" "cart_root" {
   rest_api_id   = aws_api_gateway_rest_api.this.id
   resource_id   = aws_api_gateway_resource.cart.id
   http_method   = "ANY"
-  authorization = "NONE"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito_auth.id
+
+  request_parameters = {
+    "method.request.header.x-session-id"  = false
+    "method.request.header.Authorization" = true
+  }
 }
 
 resource "aws_api_gateway_integration" "cart_root" {
@@ -157,6 +178,11 @@ resource "aws_api_gateway_integration" "cart_root" {
   integration_http_method = "ANY"
   type                    = "HTTP_PROXY"
   uri                     = "http://${var.eks_nlb_hostname}/cart"
+
+  request_parameters = {
+    "integration.request.header.x-session-id"  = "context.authorizer.claims.sub"
+    "integration.request.header.Authorization" = "method.request.header.Authorization"
+  }
 }
 
 resource "aws_api_gateway_resource" "cart_proxy" {
@@ -169,10 +195,12 @@ resource "aws_api_gateway_method" "cart_any" {
   rest_api_id   = aws_api_gateway_rest_api.this.id
   resource_id   = aws_api_gateway_resource.cart_proxy.id
   http_method   = "ANY"
-  authorization = "NONE"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito_auth.id
 
   request_parameters = {
-    "method.request.path.proxy" = true
+    "method.request.path.proxy"           = true
+    "method.request.header.Authorization" = true
   }
 }
 
@@ -185,13 +213,15 @@ resource "aws_api_gateway_integration" "cart_any" {
   uri                     = "http://${var.eks_nlb_hostname}/cart/{proxy}"
 
   request_parameters = {
-    "integration.request.path.proxy" = "method.request.path.proxy"
+    "integration.request.path.proxy"           = "method.request.path.proxy"
+    "integration.request.header.Authorization" = "method.request.header.Authorization"
+    "integration.request.header.x-session-id"  = "context.authorizer.claims.sub"
   }
 }
 
-# ----------------------
-# Production routes
-# ----------------------
+# # ----------------------
+# # Production routes
+# # ----------------------
 resource "aws_api_gateway_resource" "production" {
   rest_api_id = aws_api_gateway_rest_api.this.id
   parent_id   = aws_api_gateway_rest_api.this.root_resource_id
@@ -202,7 +232,13 @@ resource "aws_api_gateway_method" "production_root" {
   rest_api_id   = aws_api_gateway_rest_api.this.id
   resource_id   = aws_api_gateway_resource.production.id
   http_method   = "ANY"
-  authorization = "NONE"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito_auth.id
+
+  request_parameters = {
+    "method.request.header.x-session-id"  = false
+    "method.request.header.Authorization" = true
+  }
 }
 
 resource "aws_api_gateway_integration" "production_root" {
@@ -212,6 +248,11 @@ resource "aws_api_gateway_integration" "production_root" {
   integration_http_method = "ANY"
   type                    = "HTTP_PROXY"
   uri                     = "http://${var.eks_nlb_hostname}/production"
+
+  request_parameters = {
+    "integration.request.header.x-session-id"  = "context.authorizer.claims.sub"
+    "integration.request.header.Authorization" = "method.request.header.Authorization"
+  }
 }
 
 resource "aws_api_gateway_resource" "production_proxy" {
@@ -224,10 +265,12 @@ resource "aws_api_gateway_method" "production_any" {
   rest_api_id   = aws_api_gateway_rest_api.this.id
   resource_id   = aws_api_gateway_resource.production_proxy.id
   http_method   = "ANY"
-  authorization = "NONE"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito_auth.id
 
   request_parameters = {
-    "method.request.path.proxy" = true
+    "method.request.path.proxy"           = true
+    "method.request.header.Authorization" = true
   }
 }
 
@@ -240,13 +283,15 @@ resource "aws_api_gateway_integration" "production_any" {
   uri                     = "http://${var.eks_nlb_hostname}/production/{proxy}"
 
   request_parameters = {
-    "integration.request.path.proxy" = "method.request.path.proxy"
+    "integration.request.path.proxy"           = "method.request.path.proxy"
+    "integration.request.header.Authorization" = "method.request.header.Authorization"
+    "integration.request.header.x-session-id"  = "context.authorizer.claims.sub"
   }
 }
 
-# ----------------------
-# Order routes
-# ----------------------
+# # ----------------------
+# # Order routes
+# # ----------------------
 resource "aws_api_gateway_resource" "order" {
   rest_api_id = aws_api_gateway_rest_api.this.id
   parent_id   = aws_api_gateway_rest_api.this.root_resource_id
@@ -257,7 +302,13 @@ resource "aws_api_gateway_method" "order_root" {
   rest_api_id   = aws_api_gateway_rest_api.this.id
   resource_id   = aws_api_gateway_resource.order.id
   http_method   = "ANY"
-  authorization = "NONE"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito_auth.id
+
+  request_parameters = {
+    "method.request.header.x-session-id"  = false
+    "method.request.header.Authorization" = true
+  }
 }
 
 resource "aws_api_gateway_integration" "order_root" {
@@ -267,6 +318,11 @@ resource "aws_api_gateway_integration" "order_root" {
   integration_http_method = "ANY"
   type                    = "HTTP_PROXY"
   uri                     = "http://${var.eks_nlb_hostname}/order"
+
+  request_parameters = {
+    "integration.request.header.x-session-id"  = "context.authorizer.claims.sub"
+    "integration.request.header.Authorization" = "method.request.header.Authorization"
+  }
 }
 
 resource "aws_api_gateway_resource" "order_proxy" {
@@ -279,10 +335,12 @@ resource "aws_api_gateway_method" "order_any" {
   rest_api_id   = aws_api_gateway_rest_api.this.id
   resource_id   = aws_api_gateway_resource.order_proxy.id
   http_method   = "ANY"
-  authorization = "NONE"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito_auth.id
 
   request_parameters = {
-    "method.request.path.proxy" = true
+    "method.request.path.proxy"           = true
+    "method.request.header.Authorization" = true
   }
 }
 
@@ -295,7 +353,9 @@ resource "aws_api_gateway_integration" "order_any" {
   uri                     = "http://${var.eks_nlb_hostname}/order/{proxy}"
 
   request_parameters = {
-    "integration.request.path.proxy" = "method.request.path.proxy"
+    "integration.request.path.proxy"           = "method.request.path.proxy"
+    "integration.request.header.Authorization" = "method.request.header.Authorization"
+    "integration.request.header.x-session-id"  = "context.authorizer.claims.sub"
   }
 }
 
@@ -360,21 +420,21 @@ resource "aws_api_gateway_deployment" "deploy" {
       aws_api_gateway_method.payment_any.id,
       aws_api_gateway_integration.payment_root.id,
       aws_api_gateway_integration.payment_any.id,
-      # Cart routes
+      # # Cart routes
       aws_api_gateway_resource.cart.id,
       aws_api_gateway_resource.cart_proxy.id,
       aws_api_gateway_method.cart_root.id,
       aws_api_gateway_method.cart_any.id,
       aws_api_gateway_integration.cart_root.id,
       aws_api_gateway_integration.cart_any.id,
-      # Production routes
+      # # Production routes
       aws_api_gateway_resource.production.id,
       aws_api_gateway_resource.production_proxy.id,
       aws_api_gateway_method.production_root.id,
       aws_api_gateway_method.production_any.id,
       aws_api_gateway_integration.production_root.id,
       aws_api_gateway_integration.production_any.id,
-      # Order routes
+      # # Order routes
       aws_api_gateway_resource.order.id,
       aws_api_gateway_resource.order_proxy.id,
       aws_api_gateway_method.order_root.id,
