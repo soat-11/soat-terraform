@@ -3,6 +3,12 @@ variable "app_name" {
   type        = string
 }
 
+variable "service_account_name" {
+  description = "Kubernetes service account name for IRSA"
+  type        = string
+  default     = null
+}
+
 variable "namespace" {
   description = "Kubernetes namespace"
   type        = string

@@ -14,3 +14,14 @@ output "cluster_ca" {
   sensitive   = true
 }
 
+# OIDC outputs for IRSA
+output "oidc_provider_arn" {
+  description = "ARN of the OIDC provider for IRSA"
+  value       = module.eks_cluster.oidc_provider_arn
+}
+
+output "oidc_issuer_url" {
+  description = "OIDC issuer URL for IRSA (without https://)"
+  value       = module.eks_cluster.oidc_issuer_url
+}
+

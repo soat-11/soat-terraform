@@ -28,6 +28,8 @@ resource "kubernetes_deployment" "deployment" {
         }
       }
       spec {
+        service_account_name = var.service_account_name
+
         container {
           name              = var.app_name
           image             = var.image

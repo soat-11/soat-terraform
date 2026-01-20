@@ -4,6 +4,20 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
+variable "aws_access_key_id" {
+  description = "AWS Access Key ID (opcional - IRSA é preferido)"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "aws_secret_access_key" {
+  description = "AWS Secret Access Key (opcional - IRSA é preferido)"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 variable "app_port" {
   description = "The port for the application"
   type        = number
@@ -68,6 +82,30 @@ variable "image_pull_policy" {
   default     = "IfNotPresent"
 }
 
+# IRSA - OIDC Provider configuration
+variable "oidc_provider_arn" {
+  description = "ARN of the OIDC provider for IRSA"
+  type        = string
+}
+
+variable "oidc_issuer_url" {
+  description = "OIDC issuer URL (without https://)"
+  type        = string
+}
+
+# SQS Queue ARNs for IRSA permissions
+variable "producer_queue_arns" {
+  description = "List of SQS queue ARNs that this service can send messages to"
+  type        = list(string)
+  default     = []
+}
+
+variable "consumer_queue_arns" {
+  description = "List of SQS queue ARNs that this service can receive messages from"
+  type        = list(string)
+  default     = []
+}
+
 # PostgreSQL
 variable "db_host" {
   description = "PostgreSQL host"
@@ -97,7 +135,7 @@ variable "db_name" {
   type        = string
 }
 
-# SQS
+# SQS URLs
 variable "sqs_order_created_url" {
   description = "The URL for the order created queue (producer)"
   type        = string
@@ -117,17 +155,3 @@ variable "sqs_production_withdrawn_url" {
   description = "The URL for the production withdrawn/completed queue (consumer)"
   type        = string
 }
-
-# AWS Credentials
-variable "aws_access_key_id" {
-  description = "AWS Access Key ID"
-  type        = string
-  sensitive   = true
-}
-
-variable "aws_secret_access_key" {
-  description = "AWS Secret Access Key"
-  type        = string
-  sensitive   = true
-}
-

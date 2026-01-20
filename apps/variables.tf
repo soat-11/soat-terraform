@@ -41,47 +41,52 @@ variable "order_image" {
   default     = ""
 }
 
-variable "production_vars" {
-  description = "production variables"
-  type = object({
-    AWS_REGION            = string
-    AWS_ACCESS_KEY_ID     = string
-    AWS_SECRET_ACCESS_KEY = string
-  })
-  sensitive = true
+# -----------------------------------------------------------------------------
+# AWS Credentials (compartilhadas por todos os serviços)
+# -----------------------------------------------------------------------------
+variable "aws_access_key_id" {
+  description = "AWS Access Key ID"
+  type        = string
+  default     = ""
+  sensitive   = true
 }
 
-variable "order_vars" {
-  description = "order variables"
-  type = object({
-    AWS_REGION            = string
-    AWS_ACCESS_KEY_ID     = string
-    AWS_SECRET_ACCESS_KEY = string
-  })
-  sensitive = true
+variable "aws_secret_access_key" {
+  description = "AWS Secret Access Key"
+  type        = string
+  default     = ""
+  sensitive   = true
 }
 
-variable "payment_vars" {
-  description = "payment variables (MONGODB_URI e DB_HOST são injetados automaticamente)"
-  type = object({
-    AWS_REGION                                     = string
-    AWS_ENDPOINT                                   = optional(string, "")
-    AWS_ACCESS_KEY_ID                              = optional(string, "")
-    AWS_SECRET_ACCESS_KEY                          = optional(string, "")
-    AWS_SQS_CREATE_PAYMENT_QUEUE_URL               = optional(string, "")
-    AWS_SQS_PAYMENT_PAID_QUEUE_URL                 = optional(string, "")
-    AWS_SQS_MERCADO_PAGO_PROCESS_PAYMENT_QUEUE_URL = optional(string, "")
-    AWS_SQS_CANCEL_PAYMENT_QUEUE_URL               = optional(string, "")
-    MERCADO_PAGO_POS_ID                            = string
-    MERCADO_PAGO_API_URL                           = string
-    MERCADO_PAGO_PAYMENT_ACCESS_TOKEN              = string
-    MERCADO_PAGO_WEBHOOK_SECRET_KEY                = string
-    NODE_ENV                                       = string
-    PORT                                           = string
-    MONGODB_URI                                    = optional(string, "")
-    DB_HOST                                        = optional(string, "")
-  })
-  sensitive = true
+# -----------------------------------------------------------------------------
+# Mercado Pago (apenas para payment)
+# -----------------------------------------------------------------------------
+variable "mercado_pago_pos_id" {
+  description = "Mercado Pago POS ID"
+  type        = string
+}
+
+variable "sqs_create_payment_url" {
+  description = "SQS Create Payment Queue URL"
+  type        = string
+}
+
+variable "mercado_pago_api_url" {
+  description = "Mercado Pago API URL"
+  type        = string
+  default     = "https://api.mercadopago.com/"
+}
+
+variable "mercado_pago_payment_access_token" {
+  description = "Mercado Pago Payment Access Token"
+  type        = string
+  sensitive   = true
+}
+
+variable "mercado_pago_webhook_secret_key" {
+  description = "Mercado Pago Webhook Secret Key"
+  type        = string
+  sensitive   = true
 }
 
 variable "backend_bucket" {

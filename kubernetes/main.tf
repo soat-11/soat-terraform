@@ -38,6 +38,12 @@ module "eks_node_group" {
   project      = var.project
   eks_role_arn = local.eks_role_arn
   subnet_ids   = data.terraform_remote_state.cloud_base.outputs.subnet_ids
+
+
+  instance_types = ["t3.small", "t3a.small"]
+  desired_size   = 3
+  min_size       = 2
+  max_size       = 4
 }
 
 data "aws_iam_session_context" "current" {

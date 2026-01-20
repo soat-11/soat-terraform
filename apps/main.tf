@@ -22,6 +22,30 @@ data "terraform_remote_state" "kubernetes" {
   }
 }
 
+# OIDC outputs for IRSA (used by app modules)
+locals {
+  oidc_provider_arn = data.terraform_remote_state.kubernetes.outputs.oidc_provider_arn
+  oidc_issuer_url   = data.terraform_remote_state.kubernetes.outputs.oidc_issuer_url
+}
+
+# All SQS queue ARNs - all services can communicate with all queues
+locals {
+  all_sqs_queue_arns = [
+    # Payment queues
+    module.payment_sqs.create-payment-queue_arn,
+    module.payment_sqs.payment-paid-queue_arn,
+    module.payment_sqs.mercado-pago-process-payment-queue_arn,
+    module.payment_sqs.cancel-payment-queue_arn,
+    # Order queues
+    module.order_sqs.sqs_order_created_arn,
+    # Production queues
+    module.production_sqs.sqs_payment_confirmed_arn,
+    module.production_sqs.sqs_production_started_arn,
+    module.production_sqs.sqs_production_ready_arn,
+    module.production_sqs.sqs_production_withdrawn_arn,
+  ]
+}
+
 data "terraform_remote_state" "payment_database" {
   backend = "s3"
   config = {
@@ -112,6 +136,48 @@ resource "helm_release" "ingress_nginx" {
   create_namespace = true
 }
 
+# -----------------------------------------------------------------------------
+# External Secrets Operator for AWS Secrets Manager integration
+# -----------------------------------------------------------------------------
+resource "helm_release" "external_secrets" {
+  name             = "external-secrets"
+  repository       = "https://charts.external-secrets.io"
+  chart            = "external-secrets"
+  version          = "0.10.0"
+  namespace        = "external-secrets"
+  create_namespace = true
+
+  depends_on = [helm_release.ingress_nginx]
+}
+
+# Wait for External Secrets Operator CRDs to be ready
+resource "time_sleep" "wait_for_eso_crds" {
+  depends_on      = [helm_release.external_secrets]
+  create_duration = "30s"
+}
+
+# ClusterSecretStore for AWS Secrets Manager
+# Uses IRSA for authentication (pods with proper service account will have access)
+resource "kubernetes_manifest" "cluster_secret_store" {
+  manifest = {
+    apiVersion = "external-secrets.io/v1beta1"
+    kind       = "ClusterSecretStore"
+    metadata = {
+      name = "aws-secrets-manager"
+    }
+    spec = {
+      provider = {
+        aws = {
+          service = "SecretsManager"
+          region  = var.region
+        }
+      }
+    }
+  }
+
+  depends_on = [time_sleep.wait_for_eso_crds]
+}
+
 data "kubernetes_service" "nginx_lb" {
   metadata {
     name      = "ingress-nginx-controller"
@@ -139,18 +205,40 @@ module "payment" {
   app_name     = "payment"
   image        = var.payment_image != "" ? var.payment_image : "${data.terraform_remote_state.cloud_base.outputs.payment_ecr_url}:latest"
   ingress_host = data.kubernetes_service.nginx_lb.status[0].load_balancer[0].ingress[0].hostname
-  vars = merge(var.payment_vars, {
-    AWS_SQS_CREATE_PAYMENT_QUEUE_URL               = module.payment_sqs.create-payment-queue_url
-    AWS_SQS_PAYMENT_PAID_QUEUE_URL                 = module.payment_sqs.payment-paid-queue_url
-    AWS_SQS_MERCADO_PAGO_PROCESS_PAYMENT_QUEUE_URL = module.payment_sqs.mercado-pago-process-payment-queue_url
-    AWS_SQS_CANCEL_PAYMENT_QUEUE_URL               = module.payment_sqs.cancel-payment-queue_url
-    MONGODB_URI                                    = local.payment_db_uri
-    DB_HOST                                        = local.payment_db_host
-    CART_API_URL                                   = "http://${module.cart.service_name}:${module.cart.service_port}"
-  })
 
+  # IRSA configuration
+  oidc_provider_arn = local.oidc_provider_arn
+  oidc_issuer_url   = local.oidc_issuer_url
 
-  depends_on = [helm_release.ingress_nginx]
+  # All queues - full access to send and receive from all queues
+  producer_queue_arns = local.all_sqs_queue_arns
+  consumer_queue_arns = local.all_sqs_queue_arns
+
+  # AWS credentials
+  aws_region            = var.region
+  aws_access_key_id     = var.aws_access_key_id
+  aws_secret_access_key = var.aws_secret_access_key
+
+  # SQS URLs
+  sqs_create_payment_url               = var.sqs_create_payment_url
+  sqs_payment_paid_url                 = module.payment_sqs.payment-paid-queue_url
+  sqs_mercado_pago_process_payment_url = module.payment_sqs.mercado-pago-process-payment-queue_url
+  sqs_cancel_payment_url               = module.payment_sqs.cancel-payment-queue_url
+
+  # Database
+  mongodb_uri = local.payment_db_uri
+  db_host     = local.payment_db_host
+
+  # External services
+  cart_api_url = "http://${module.cart.service_name}:${module.cart.service_port}"
+
+  # Mercado Pago
+  mercado_pago_pos_id               = var.mercado_pago_pos_id
+  mercado_pago_api_url              = var.mercado_pago_api_url
+  mercado_pago_payment_access_token = var.mercado_pago_payment_access_token
+  mercado_pago_webhook_secret_key   = var.mercado_pago_webhook_secret_key
+
+  depends_on = [helm_release.ingress_nginx, helm_release.external_secrets]
 }
 
 module "cart" {
@@ -160,26 +248,60 @@ module "cart" {
   image        = var.cart_image != "" ? var.cart_image : "${data.terraform_remote_state.cloud_base.outputs.cart_ecr_url}:latest"
   ingress_host = data.kubernetes_service.nginx_lb.status[0].load_balancer[0].ingress[0].hostname
 
+  # IRSA configuration
+  oidc_provider_arn = local.oidc_provider_arn
+  oidc_issuer_url   = local.oidc_issuer_url
+
+  # All queues - full access to send and receive from all queues
+  producer_queue_arns = local.all_sqs_queue_arns
+  consumer_queue_arns = local.all_sqs_queue_arns
+
+  # AWS credentials
+  aws_region            = var.region
+  aws_access_key_id     = var.aws_access_key_id
+  aws_secret_access_key = var.aws_secret_access_key
+
+  # MongoDB
+  mongodb_uri = local.cart_db_uri
   db_host     = local.cart_db_host
   db_name     = local.cart_db_name
+  db_user     = local.cart_db_user
   db_password = local.cart_db_password
   db_port     = 27017
-  db_user     = local.cart_db_user
+
+  depends_on = [helm_release.ingress_nginx, helm_release.external_secrets]
 }
 
 module "production" {
   source = "./production"
 
-  app_name                     = "production"
-  image                        = var.production_image != "" ? var.production_image : "${data.terraform_remote_state.cloud_base.outputs.production_ecr_url}:latest"
-  ingress_host                 = data.kubernetes_service.nginx_lb.status[0].load_balancer[0].ingress[0].hostname
+  app_name     = "production"
+  image        = var.production_image != "" ? var.production_image : "${data.terraform_remote_state.cloud_base.outputs.production_ecr_url}:latest"
+  ingress_host = data.kubernetes_service.nginx_lb.status[0].load_balancer[0].ingress[0].hostname
+
+  # IRSA configuration
+  oidc_provider_arn = local.oidc_provider_arn
+  oidc_issuer_url   = local.oidc_issuer_url
+
+  # All queues - full access to send and receive from all queues
+  producer_queue_arns = local.all_sqs_queue_arns
+  consumer_queue_arns = local.all_sqs_queue_arns
+
+  # AWS credentials
+  aws_region            = var.region
+  aws_access_key_id     = var.aws_access_key_id
+  aws_secret_access_key = var.aws_secret_access_key
+
+  # SQS URLs
   sqs_payment_confirmed_url    = module.production_sqs.sqs_payment_confirmed_url
   sqs_production_started_url   = module.production_sqs.sqs_production_started_url
   sqs_production_ready_url     = module.production_sqs.sqs_production_ready_url
   sqs_production_withdrawn_url = module.production_sqs.sqs_production_withdrawn_url
-  mongo_uri                    = local.production_db_uri
-  aws_access_key_id            = var.production_vars.AWS_ACCESS_KEY_ID
-  aws_secret_access_key        = var.production_vars.AWS_SECRET_ACCESS_KEY
+
+  # MongoDB
+  mongo_uri = local.production_db_uri
+
+  depends_on = [helm_release.external_secrets]
 }
 
 module "order" {
@@ -189,6 +311,19 @@ module "order" {
   image        = var.order_image != "" ? var.order_image : "${data.terraform_remote_state.cloud_base.outputs.order_ecr_url}:latest"
   ingress_host = data.kubernetes_service.nginx_lb.status[0].load_balancer[0].ingress[0].hostname
 
+  # IRSA configuration
+  oidc_provider_arn = local.oidc_provider_arn
+  oidc_issuer_url   = local.oidc_issuer_url
+
+  # All queues - full access to send and receive from all queues
+  producer_queue_arns = local.all_sqs_queue_arns
+  consumer_queue_arns = local.all_sqs_queue_arns
+
+  # AWS credentials
+  aws_region            = var.region
+  aws_access_key_id     = var.aws_access_key_id
+  aws_secret_access_key = var.aws_secret_access_key
+
   # PostgreSQL
   db_host     = local.order_db_host
   db_port     = local.order_db_port
@@ -196,17 +331,13 @@ module "order" {
   db_user     = local.order_db_user
   db_password = local.order_db_password
 
-  # SQS - Producer
-  sqs_order_created_url = module.order_sqs.sqs_order_created_url
-
-  # SQS - Consumer (filas do production)
+  # SQS URLs
+  sqs_order_created_url        = module.order_sqs.sqs_order_created_url
   sqs_production_started_url   = module.production_sqs.sqs_production_started_url
   sqs_production_ready_url     = module.production_sqs.sqs_production_ready_url
   sqs_production_withdrawn_url = module.production_sqs.sqs_production_withdrawn_url
 
-  # AWS Credentials
-  aws_access_key_id     = var.order_vars.AWS_ACCESS_KEY_ID
-  aws_secret_access_key = var.order_vars.AWS_SECRET_ACCESS_KEY
+  depends_on = [helm_release.external_secrets]
 }
 
 module "api_gateway" {
